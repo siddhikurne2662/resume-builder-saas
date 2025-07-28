@@ -1,9 +1,11 @@
 // src/app/landing/page.tsx
 import React from 'react';
-import Link from 'next/link'; // For navigation to builder page
-import { FileText, PencilLine, Share2 } from 'lucide-react'; // Icons for features section
+import Link from 'next/link';
+import { FileText, PencilLine, Share2 } from 'lucide-react';
 
-// Helper component for the feature cards - defined once here for reusability
+import Header from './components/Header'; // Ensure Header is imported
+
+// Helper component for the feature cards (redefined as it's not imported)
 interface FeatureCardProps {
   icon: React.ElementType; // Lucide icon component
   title: string;
@@ -16,67 +18,25 @@ const FeatureCard: React.FC<FeatureCardProps> = ({ icon: Icon, title, descriptio
       <Icon size={24} /> {/* Use Lucide icon */}
     </div>
     <div className="flex flex-col gap-1">
-      <h2 className="text-white text-base font-bold leading-tight font-outfit">{title}</h2> {/* Applied Outfit font */}
-      <p className="text-dark-text-light text-sm font-normal leading-normal font-inter">{description}</p> {/* Applied Inter font */}
+      <h2 className="text-white text-base font-bold leading-tight font-outfit">{title}</h2>
+      <p className="text-dark-text-light text-sm font-normal leading-normal font-inter">{description}</p>
     </div>
   </div>
 );
 
 export default function LandingPage() {
+  // Define a sample user name and profile image URL for the header
+  const sampleUserName = "Siddhant"; // Sample name for initial
+  const sampleUserProfileImage = 'https://images.unsplash.com/photo-1534528736603-514e8f17a944?q=80&w=1000&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'; // Sample image
+
   return (
-    <div className="relative flex size-full min-h-screen flex-col bg-dark-bg-primary dark group/design-root overflow-x-hidden">
+    <div className="relative flex size-full min-h-screen flex-col bg-dark-bg-main dark group/design-root overflow-x-hidden">
       <div className="layout-container flex h-full grow flex-col">
-        {/* Header Section */}
-        <header className="flex items-center justify-between whitespace-nowrap border-b border-solid border-b-dark-border-primary px-5 sm:px-10 py-3"> {/* Adjusted px for better mobile/tablet */}
-          <div className="flex items-center gap-4 text-white">
-            {/* Logo and App Name */}
-            <Link href="/" className="flex items-center gap-2">
-                {/* Keeping the icon from Stitch, but could be replaced with a Lucide icon */}
-                <div className="size-6"> {/* Adjusted size for better visibility */}
-                    <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <g clipPath="url(#clip0_6_535)">
-                            <path
-                                fillRule="evenodd"
-                                clipRule="evenodd"
-                                d="M47.2426 24L24 47.2426L0.757355 24L24 0.757355L47.2426 24ZM12.2426 21H35.7574L24 9.24264L12.2426 21Z"
-                                fill="currentColor"
-                            ></path>
-                        </g>
-                        <defs>
-                            <clipPath id="clip0_6_535"><rect width="48" height="48" fill="white"></rect></clipPath>
-                        </defs>
-                    </svg>
-                </div>
-                <h2 className="text-white text-xl font-bold leading-tight tracking-[-0.015em] font-outfit">ResumeCraft</h2>
-            </Link>
-          </div>
-          <div className="flex flex-1 justify-end gap-4 sm:gap-8"> {/* Adjusted gap */}
-            {/* Desktop Navigation Links */}
-            <div className="hidden sm:flex items-center gap-4 sm:gap-9"> {/* Hide on extra small screens */}
-              <a className="text-white text-sm font-medium leading-normal hover:text-gray-300 transition-colors font-inter" href="#">Templates</a>
-              <a className="text-white text-sm font-medium leading-normal hover:text-gray-300 transition-colors font-inter" href="#">Examples</a>
-              <a className="text-white text-sm font-medium leading-normal hover:text-gray-300 transition-colors font-inter" href="#">Pricing</a>
-            </div>
-            {/* Action Buttons */}
-            <div className="flex gap-2">
-              <Link href="/builder" passHref>
-                <button
-                  className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-10 px-4 bg-light-accent-button text-dark-bg-primary text-sm font-bold leading-normal tracking-[0.015em] hover:opacity-90 transition-opacity font-inter"
-                >
-                  <span className="truncate">Create My Resume</span>
-                </button>
-              </Link>
-              <button
-                className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-10 px-4 bg-dark-border-primary text-white text-sm font-bold leading-normal tracking-[0.015em] hover:opacity-90 transition-opacity font-inter"
-              >
-                <span className="truncate">Log In</span>
-              </button>
-            </div>
-          </div>
-        </header>
+        {/* Pass userProfileImageUrl and userName to Header */}
+        <Header userProfileImageUrl={sampleUserProfileImage} userName={sampleUserName} />
 
         {/* Main Content Area */}
-        <div className="px-5 sm:px-10 lg:px-40 flex flex-1 justify-center py-5"> {/* Adjusted px for better responsiveness */}
+        <div className="px-5 sm:px-10 lg:px-40 flex flex-1 justify-center py-5">
           <div className="layout-content-container flex flex-col max-w-[960px] flex-1">
             {/* Hero Section */}
             <div className="@container">
@@ -141,7 +101,7 @@ export default function LandingPage() {
             </div>
 
             {/* Call to Action Section */}
-            <div className="px-4 py-10 @container"> {/* Removed unnecessary justify-end from flex */}
+            <div className="px-4 py-10 @container">
               <div className="flex flex-col justify-end gap-6 @[480px]:gap-8 @[480px]:px-10 @[480px]:py-20">
                 <div className="flex flex-col gap-2 text-center">
                   <h1 className="text-white tracking-tight text-[32px] font-bold leading-tight @[480px]:text-4xl @[480px]:font-black @[480px]:leading-tight @[480px]:tracking-[-0.033em] max-w-[720px] font-outfit">

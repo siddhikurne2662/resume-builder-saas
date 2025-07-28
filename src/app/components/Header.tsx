@@ -1,17 +1,20 @@
 // src/app/components/Header.tsx
-'use client'; // Client component for interactivity
+'use client';
 
 import React, { useState } from 'react';
-import Link from 'next/link'; // Import Link
-import { Download, LayoutTemplate, User, Menu, X, ZoomIn, ZoomOut } from 'lucide-react'; // Icons
+import Link from 'next/link';
+import { Download, LayoutTemplate, User, Menu, X, ZoomIn, ZoomOut, HelpCircle, UserCheck, Settings } from 'lucide-react';
 
 interface HeaderProps {
-  onDownloadPdf: () => void;
-  onSelectTemplate: (template: string) => void;
-  onZoomChange: (scale: number) => void;
-  onToggleMobileSidebar: () => void;
-  isMobileSidebarOpen: boolean;
-  activeTemplate: string;
+  onDownloadPdf?: () => void;
+  onSelectTemplate?: (template: string) => void;
+  onZoomChange?: (scale: number) => void;
+  onToggleMobileSidebar?: () => void;
+  isMobileSidebarOpen?: boolean;
+  activeTemplate?: string;
+  showBuilderActions?: boolean;
+  userProfileImageUrl?: string;
+  userName?: string; // NEW PROP: User's full name for the initial
 }
 
 export default function Header({
@@ -21,9 +24,12 @@ export default function Header({
   onToggleMobileSidebar,
   isMobileSidebarOpen,
   activeTemplate,
+  showBuilderActions = false,
+  userProfileImageUrl, // No default here, rely on conditional rendering
+  userName = 'User', // Default name if none provided
 }: HeaderProps) {
   const [isTemplateDropdownOpen, setIsTemplateDropdownOpen] = useState(false);
-  const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false); // For future auth
+  const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
   const [currentZoom, setCurrentZoom] = useState(100);
 
   const templates = [
@@ -34,105 +40,155 @@ export default function Header({
 
   const handleZoomIn = () => {
     setCurrentZoom(prev => Math.min(prev + 10, 150));
-    onZoomChange(Math.min(currentZoom + 10, 150) / 100);
+    onZoomChange && onZoomChange(Math.min(currentZoom + 10, 150) / 100);
   };
 
   const handleZoomOut = () => {
     setCurrentZoom(prev => Math.max(prev - 10, 50));
-    onZoomChange(Math.max(currentZoom - 10, 50) / 100);
+    onZoomChange && onZoomChange(Math.max(currentZoom - 10, 50) / 100);
   };
 
   const handleResetZoom = () => {
     setCurrentZoom(100);
-    onZoomChange(1);
+    onZoomChange && onZoomChange(1);
   };
 
+  const handleLogout = () => {
+    console.log("User logged out!");
+  };
+
+  const userInitial = userName.charAt(0).toUpperCase(); // Get the first letter of the name
+
   return (
-    <header className="bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-primary-dark)] text-white p-4 shadow-lg z-50 sticky top-0">
+    <header className="bg-dark-bg-main border-b border-dark-border-medium text-white px-6 py-3 sm:px-10 z-50 sticky top-0">
       <div className="container mx-auto flex justify-between items-center">
-        {/* Logo */}
+        {/* Logo and App Name */}
         <h1 className="text-2xl font-outfit font-semibold">
-          <Link href="/" className="hover:text-blue-200 transition-colors"> {/* Use Link here */}
-            ResumeFlow Pro 🚀
+          <Link href="/" className="hover:opacity-80 transition-opacity">
+            ResumeCraft
           </Link>
         </h1>
 
         {/* Desktop Navigation / Actions */}
-        <nav className="hidden md:flex items-center space-x-6">
-          {/* Template Selector Dropdown */}
-          <div className="relative">
-            <button
-              onClick={() => setIsTemplateDropdownOpen(!isTemplateDropdownOpen)}
-              className="flex items-center px-4 py-2 bg-blue-700 bg-opacity-50 rounded-md hover:bg-opacity-70 transition-all focus:outline-none focus:ring-2 focus:ring-blue-300"
-            >
-              <LayoutTemplate className="mr-2 h-5 w-5" />
-              Templates ({templates.find(t => t.value === activeTemplate)?.name || 'Select'})
-            </button>
-            {isTemplateDropdownOpen && (
-              <div className="absolute right-0 mt-2 w-48 bg-white text-gray-800 rounded-md shadow-lg py-1 z-10">
-                {templates.map((template) => (
+        <nav className="hidden md:flex items-center gap-8">
+          {/* Main Navigation Links */}
+          <div className="flex items-center gap-6 lg:gap-9">
+            <Link href="/dashboard" className="text-white text-sm font-medium hover:text-dark-text-light transition-colors font-inter">
+              Dashboard
+            </Link>
+            <Link href="/builder" className="text-white text-sm font-medium hover:text-dark-text-light transition-colors font-inter">
+              My Resumes
+            </Link>
+            <Link href="#" className="text-white text-sm font-medium hover:text-dark-text-light transition-colors font-inter">
+              Templates
+            </Link>
+            <Link href="/settings" className="text-white text-sm font-medium hover:text-dark-text-light transition-colors font-inter">
+              Settings
+            </Link>
+            {/* Keeping Help for now, as it's a standard nav item */}
+            <Link href="#" className="text-white text-sm font-medium hover:text-dark-text-light transition-colors font-inter">
+              <HelpCircle className="h-5 w-5" />
+            </Link>
+          </div>
+
+          {/* Builder-specific actions or global actions */}
+          <div className="flex items-center gap-2">
+            {showBuilderActions && (
+              <>
+                {/* Template Selector Dropdown */}
+                <div className="relative">
                   <button
-                    key={template.value}
-                    onClick={() => {
-                      onSelectTemplate(template.value);
-                      setIsTemplateDropdownOpen(false);
-                    }}
-                    className={`block w-full text-left px-4 py-2 hover:bg-gray-100 ${activeTemplate === template.value ? 'bg-blue-100 font-medium' : ''}`}
+                    onClick={() => setIsTemplateDropdownOpen(!isTemplateDropdownOpen)}
+                    className="flex items-center px-3 py-2 bg-dark-bg-card rounded-md hover:bg-dark-border-light transition-all focus:outline-none focus:ring-2 focus:ring-dark-text-blue text-dark-text-light"
                   >
-                    {template.name}
+                    <LayoutTemplate className="mr-2 h-4 w-4 text-light-button-accent" />
+                    Templates
                   </button>
-                ))}
-              </div>
+                  {isTemplateDropdownOpen && (
+                    <div className="absolute right-0 mt-2 w-48 bg-white text-dark-bg-main rounded-md shadow-lg py-1 z-10">
+                      {templates.map((template) => (
+                        <button
+                          key={template.value}
+                          onClick={() => {
+                            onSelectTemplate && onSelectTemplate(template.value);
+                            setIsTemplateDropdownOpen(false);
+                          }}
+                          className={`block w-full text-left px-4 py-2 hover:bg-gray-100 ${activeTemplate === template.value ? 'bg-gray-100 font-medium' : ''}`}
+                        >
+                          {template.name}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Zoom Controls */}
+                <div className="flex items-center space-x-1 bg-dark-bg-card rounded-md p-1 text-light-button-accent">
+                  <button onClick={handleZoomOut} className="p-1 rounded-md hover:bg-dark-border-light transition-all focus:outline-none focus:ring-2 focus:ring-dark-text-blue">
+                    <ZoomOut className="h-4 w-4" />
+                  </button>
+                  <span className="text-xs font-medium text-dark-text-light">{currentZoom}%</span>
+                  <button onClick={handleZoomIn} className="p-1 rounded-md hover:bg-dark-border-light transition-all focus:outline-none focus:ring-2 focus:ring-dark-text-blue">
+                    <ZoomIn className="h-4 w-4" />
+                  </button>
+                  <button onClick={handleResetZoom} className="text-xs px-2 py-1 rounded-md hover:bg-dark-border-light transition-all focus:outline-none focus:ring-2 focus:ring-dark-text-blue text-dark-text-light">
+                    Reset
+                  </button>
+                </div>
+
+                {/* Download Button */}
+                <button
+                  onClick={onDownloadPdf}
+                  className="bg-blue-call-to-action text-white hover:bg-blue-button-hover font-bold px-4 py-2 rounded-full transition-colors flex items-center font-inter"
+                >
+                  <Download className="mr-2 h-4 w-4" />
+                  Download
+                </button>
+              </>
             )}
-          </div>
 
-          {/* Zoom Controls */}
-          <div className="flex items-center space-x-2 bg-blue-700 bg-opacity-50 rounded-md p-1">
-            <button onClick={handleZoomOut} className="p-1 rounded-md hover:bg-opacity-70 transition-all focus:outline-none focus:ring-2 focus:ring-blue-300">
-              <ZoomOut className="h-5 w-5" />
-            </button>
-            <span className="text-sm font-medium">{currentZoom}%</span>
-            <button onClick={handleZoomIn} className="p-1 rounded-md hover:bg-opacity-70 transition-all focus:outline-none focus:ring-2 focus:ring-blue-300">
-              <ZoomIn className="h-5 w-5" />
-            </button>
-            <button onClick={handleResetZoom} className="text-sm px-2 py-1 rounded-md hover:bg-opacity-70 transition-all focus:outline-none focus:ring-2 focus:ring-blue-300">
-              Reset
-            </button>
-          </div>
-
-
-          {/* Download Button */}
-          <button
-            onClick={onDownloadPdf}
-            className="btn-secondary !bg-white !text-[var(--color-primary-dark)] hover:!bg-gray-100 flex items-center"
-          >
-            <Download className="mr-2 h-5 w-5" />
-            Download PDF
-          </button>
-
-          {/* User Avatar/Profile (Placeholder for Auth) */}
-          <div className="relative">
+            {/* Upgrade Button - Re-added as per original design's spirit, you can hide with `hidden` if not needed */}
             <button
-              onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
-              className="w-10 h-10 rounded-full bg-blue-200 text-blue-800 flex items-center justify-center font-bold text-lg focus:outline-none focus:ring-2 focus:ring-blue-300"
+              className="bg-dark-bg-card text-white hover:bg-dark-border-light font-bold px-4 py-2 rounded-full transition-colors hidden lg:flex items-center font-inter"
             >
-              U
+              Upgrade
             </button>
-            {isUserDropdownOpen && (
-              <div className="absolute right-0 mt-2 w-48 bg-white text-gray-800 rounded-md shadow-lg py-1 z-10">
-                <a href="#" className="block px-4 py-2 hover:bg-gray-100">Profile</a>
-                <a href="#" className="block px-4 py-2 hover:bg-gray-100">Settings</a>
-                <a href="#" className="block px-4 py-2 hover:bg-gray-100 text-red-600">Logout</a>
-              </div>
-            )}
+
+            {/* User Avatar/Profile - UPDATED WITH CONDITIONAL IMAGE/INITIAL */}
+            <div className="relative">
+              <button
+                onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
+                className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg focus:outline-none focus:ring-2 focus:ring-dark-text-blue transition-all ${
+                  userProfileImageUrl
+                    ? 'bg-cover bg-center bg-no-repeat'
+                    : 'bg-light-button-accent text-dark-bg-main' // Fallback colors for initial
+                }`}
+                style={userProfileImageUrl ? { backgroundImage: `url("${userProfileImageUrl}")` } : {}} // Apply image if exists
+              >
+                {!userProfileImageUrl && userInitial} {/* Show initial only if no image */}
+              </button>
+              {isUserDropdownOpen && (
+                <div className="absolute right-0 mt-2 w-48 bg-white text-dark-bg-main rounded-md shadow-lg py-1 z-10">
+                  <Link href="/settings" className="block px-4 py-2 hover:bg-gray-100 flex items-center gap-2">
+                    <UserCheck className="h-4 w-4" /> Profile
+                  </Link>
+                  <Link href="/settings" className="block px-4 py-2 hover:bg-gray-100 flex items-center gap-2">
+                    <Settings className="h-4 w-4" /> Settings
+                  </Link>
+                  <button onClick={handleLogout} className="block w-full text-left px-4 py-2 hover:bg-red-100 text-red-600 flex items-center gap-2">
+                    <X className="h-4 w-4" /> Logout
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </nav>
 
         {/* Mobile Menu Button */}
         <div className="md:hidden">
           <button
-            onClick={onToggleMobileSidebar}
-            className="p-2 rounded-md hover:bg-blue-700 hover:bg-opacity-50 focus:outline-none focus:ring-2 focus:ring-blue-300"
+            onClick={() => onToggleMobileSidebar && onToggleMobileSidebar()}
+            className="p-2 rounded-md hover:bg-dark-bg-card focus:outline-none focus:ring-2 focus:ring-dark-text-blue"
           >
             {isMobileSidebarOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
           </button>

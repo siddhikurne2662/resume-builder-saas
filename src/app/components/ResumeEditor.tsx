@@ -1,16 +1,16 @@
 // src/app/components/ResumeEditor.tsx
-'use client'; // Client component for interactivity
+'use client';
 
 import React from 'react';
-import { Plus, Minus, User, Briefcase, GraduationCap, Sparkles, Award } from 'lucide-react'; // Icons
+import { Plus, Minus, User, Briefcase, GraduationCap, Sparkles, Award } from 'lucide-react';
 import { ResumeData } from '@/types/resume';
-import FloatingLabelInput from './FloatingLabelInput'; // New component
-import EditorSection from './EditorSection'; // New component
+import FloatingLabelInput from './FloatingLabelInput';
+import EditorSection from './EditorSection';
 
 interface ResumeEditorProps {
   resumeData: ResumeData;
   setResumeData: React.Dispatch<React.SetStateAction<ResumeData>>;
-  completionPercentage: number; // New prop for progress indicator
+  completionPercentage: number;
 }
 
 export default function ResumeEditor({
@@ -20,7 +20,6 @@ export default function ResumeEditor({
 }: ResumeEditorProps) {
   const { personalInfo, summary, experience, education, skills } = resumeData;
 
-  // Generic handler for personal info and summary
   const handlePersonalInfoChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
@@ -43,7 +42,6 @@ export default function ResumeEditor({
     }));
   };
 
-  // Handlers for dynamic array items (Experience, Education)
   const handleArrayItemChange = (
     section: 'experience' | 'education',
     id: string,
@@ -65,7 +63,7 @@ export default function ResumeEditor({
   };
 
   const addArrayItem = (section: 'experience' | 'education') => {
-    const newItemId = `${section}-${Date.now()}`; // Simple unique ID
+    const newItemId = `${section}-${Date.now()}`;
     if (section === 'experience') {
       setResumeData(prevData => ({
         ...prevData,
@@ -92,7 +90,6 @@ export default function ResumeEditor({
     }));
   };
 
-  // Handler for skills textarea (comma separated)
   const handleSkillsChange = (category: keyof ResumeData['skills'], value: string) => {
     setResumeData(prevData => ({
       ...prevData,
@@ -103,18 +100,15 @@ export default function ResumeEditor({
     }));
   };
 
-  // Placeholder for Save Changes action
   const handleSaveChanges = () => {
-    // In Week 3, this will involve saving to Firebase/Supabase
     console.log('Saving changes:', resumeData);
-    // You could add a toast notification here: toast.success('Resume saved!');
   };
 
   return (
-    <div className="relative h-full pb-20"> {/* Added pb-20 for sticky button space */}
-      <div className="space-y-6"> {/* Adjusted spacing */}
+    <div className="relative h-full pb-20">
+      <div className="space-y-6">
         {/* Personal Info Section */}
-        <EditorSection title="Personal Information" icon={User}>
+        <EditorSection title="Contact Information" icon={User}> {/* Updated title based on provided HTML */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FloatingLabelInput id="name" name="name" label="Full Name" type="text" value={personalInfo.name} onChange={handlePersonalInfoChange} />
             <FloatingLabelInput id="email" name="email" label="Email" type="email" value={personalInfo.email} onChange={handlePersonalInfoChange} />
@@ -126,7 +120,7 @@ export default function ResumeEditor({
         </EditorSection>
 
         {/* Summary Section */}
-        <EditorSection title="Summary / Objective" icon={Award}>
+        <EditorSection title="Summary" icon={Award}> {/* Updated title */}
           <FloatingLabelInput
             id="summary"
             name="summary"
@@ -141,8 +135,8 @@ export default function ResumeEditor({
         {/* Experience Section */}
         <EditorSection title="Work Experience" icon={Briefcase}>
           {experience.map((exp, index) => (
-            <div key={exp.id} className="border border-[var(--color-border-light)] p-4 rounded-lg mb-4 bg-[var(--color-gray-soft)] shadow-sm relative group hover-lift transition-all-fast">
-              <h4 className="text-lg font-outfit font-semibold text-[var(--color-text-dark)] mb-3">Experience {index + 1}</h4>
+            <div key={exp.id} className="border border-dark-border-light p-4 rounded-lg mb-4 bg-dark-bg-medium shadow-sm relative group hover-lift transition-all-fast"> {/* Used new custom colors */}
+              <h4 className="text-lg font-outfit font-semibold text-white mb-3">Experience {index + 1}</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <FloatingLabelInput id={`exp-title-${exp.id}`} label="Job Title" type="text" value={exp.title} onChange={(e) => handleArrayItemChange('experience', exp.id, 'title', e.target.value)} />
                 <FloatingLabelInput id={`exp-company-${exp.id}`} label="Company Name" type="text" value={exp.company} onChange={(e) => handleArrayItemChange('experience', exp.id, 'company', e.target.value)} />
@@ -157,11 +151,10 @@ export default function ResumeEditor({
                 isTextArea
                 rows={4}
               />
-              {/* Drag handle placeholder */}
               <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                 <button
                   onClick={() => removeArrayItem('experience', exp.id)}
-                  className="p-1 rounded-full bg-red-500 text-white hover:bg-red-600 transition-colors"
+                  className="p-1 rounded-full bg-red-600 text-white hover:bg-red-700 transition-colors"
                   title="Remove Experience"
                 >
                   <Minus className="h-4 w-4" />
@@ -169,7 +162,7 @@ export default function ResumeEditor({
               </div>
             </div>
           ))}
-          <button onClick={() => addArrayItem('experience')} className="btn-secondary mt-4 flex items-center">
+          <button onClick={() => addArrayItem('experience')} className="btn-secondary !bg-dark-bg-card hover:!bg-dark-border-light !text-white mt-4 flex items-center rounded-full px-4 h-10"> {/* Adapted styling */}
             <Plus className="mr-2 h-5 w-5" /> Add New Experience
           </button>
         </EditorSection>
@@ -177,8 +170,8 @@ export default function ResumeEditor({
         {/* Education Section */}
         <EditorSection title="Education" icon={GraduationCap}>
           {education.map((edu, index) => (
-            <div key={edu.id} className="border border-[var(--color-border-light)] p-4 rounded-lg mb-4 bg-[var(--color-gray-soft)] shadow-sm relative group hover-lift transition-all-fast">
-              <h4 className="text-lg font-outfit font-semibold text-[var(--color-text-dark)] mb-3">Education {index + 1}</h4>
+            <div key={edu.id} className="border border-dark-border-light p-4 rounded-lg mb-4 bg-dark-bg-medium shadow-sm relative group hover-lift transition-all-fast"> {/* Used new custom colors */}
+              <h4 className="text-lg font-outfit font-semibold text-white mb-3">Education {index + 1}</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <FloatingLabelInput id={`edu-degree-${edu.id}`} label="Degree/Field of Study" type="text" value={edu.degree} onChange={(e) => handleArrayItemChange('education', edu.id, 'degree', e.target.value)} />
                 <FloatingLabelInput id={`edu-institution-${edu.id}`} label="Institution Name" type="text" value={edu.institution} onChange={(e) => handleArrayItemChange('education', edu.id, 'institution', e.target.value)} />
@@ -186,11 +179,10 @@ export default function ResumeEditor({
                 <FloatingLabelInput id={`edu-end-${edu.id}`} label="End Date (e.g., May 2024)" type="text" value={edu.endDate} onChange={(e) => handleArrayItemChange('education', edu.id, 'endDate', e.target.value)} />
               </div>
               <FloatingLabelInput id={`edu-gpa-${edu.id}`} label="GPA (Optional)" type="text" value={edu.gpa} onChange={(e) => handleArrayItemChange('education', edu.id, 'gpa', e.target.value)} />
-              {/* Drag handle placeholder */}
               <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                 <button
                   onClick={() => removeArrayItem('education', edu.id)}
-                  className="p-1 rounded-full bg-red-500 text-white hover:bg-red-600 transition-colors"
+                  className="p-1 rounded-full bg-red-600 text-white hover:bg-red-700 transition-colors"
                   title="Remove Education"
                 >
                   <Minus className="h-4 w-4" />
@@ -198,14 +190,14 @@ export default function ResumeEditor({
               </div>
             </div>
           ))}
-          <button onClick={() => addArrayItem('education')} className="btn-secondary mt-4 flex items-center">
+          <button onClick={() => addArrayItem('education')} className="btn-secondary !bg-dark-bg-card hover:!bg-dark-border-light !text-white mt-4 flex items-center rounded-full px-4 h-10">
             <Plus className="mr-2 h-5 w-5" /> Add New Education
           </button>
         </EditorSection>
 
         {/* Skills Section */}
         <EditorSection title="Skills" icon={Sparkles}>
-          <p className="text-sm text-[var(--color-text-light)] mb-3">Enter skills comma-separated within each category. Separate with commas.</p>
+          <p className="text-sm text-dark-text-light mb-3">Enter skills comma-separated within each category. Separate with commas.</p>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
               <FloatingLabelInput
@@ -241,22 +233,22 @@ export default function ResumeEditor({
         </EditorSection>
 
         {/* Progress Indicator */}
-        <div className="section-card p-4">
-          <h3 className="text-xl font-outfit font-semibold text-[var(--color-text-dark)] mb-4">Resume Completion</h3>
-          <div className="w-full bg-gray-200 rounded-full h-3">
+        <div className="section-card p-4 bg-dark-bg-card border border-dark-border-light"> {/* Used new custom colors */}
+          <h3 className="text-xl font-outfit font-semibold text-white mb-4">Resume Completion</h3>
+          <div className="w-full bg-dark-border-light rounded-full h-3"> {/* Used new custom colors */}
             <div
-              className="bg-blue-500 h-3 rounded-full transition-all duration-500 ease-out"
+              className="bg-light-button-accent h-3 rounded-full transition-all duration-500 ease-out"
               style={{ width: `${completionPercentage}%` }}
             ></div>
           </div>
-          <p className="text-sm text-gray-600 mt-2 text-center">{Math.round(completionPercentage)}% Complete</p>
+          <p className="text-sm text-dark-text-light mt-2 text-center">{Math.round(completionPercentage)}% Complete</p>
         </div>
 
       </div>
 
       {/* Sticky Save Changes Button */}
-      <div className="sticky-bottom-bar bg-white border-t border-gray-200 p-4 shadow-lg flex justify-end">
-        <button onClick={handleSaveChanges} className="btn-primary">
+      <div className="sticky-bottom-bar bg-dark-bg-medium border-t border-dark-border-light p-4 shadow-lg flex justify-end"> {/* Updated colors */}
+        <button onClick={handleSaveChanges} className="bg-blue-call-to-action text-white hover:bg-blue-button-hover font-bold px-4 py-2 rounded-full transition-colors font-inter">
           Save Changes
         </button>
       </div>

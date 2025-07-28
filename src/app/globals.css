@@ -4,28 +4,11 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Remove or comment out the :root custom color variables */
-/* :root {
-  --color-primary: #3b82f6;
-  --color-primary-dark: #2563eb;
-  --color-primary-darker: #1d4ed8;
-  --color-accent: #6366f1;
-  --color-bg-light: #f9fafb;
-  --color-bg-page: #eef2f6;
-  --color-text-dark: #1f2937;
-  --color-text-medium: #4b5563;
-  --color-text-light: #6b7280;
-  --color-border-light: #e5e7eb;
-  --color-border-medium: #d1d5db;
-  --color-gray-soft: #f0f4f8;
-} */
-
 /* Base layer for global styles and font variables */
 @layer base {
   html {
     font-family: var(--font-inter), sans-serif;
     scroll-behavior: smooth;
-    /* Remove background-color here if you had it, as the new page.tsx controls it */
   }
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-outfit), sans-serif;
@@ -38,39 +21,34 @@
   }
 }
 
-/* KEEP all your other custom classes (.input-field, .btn-primary, etc.) below this line.
-   They might be used in the /builder page later.
-   Make sure their properties are direct CSS, not using var() if you remove the :root block.
-*/
-
-/* Custom Input Field Styles (Ensure these use direct hex/tailwind classes if :root removed) */
+/* Custom Input Field Styles - Adapted for new dark theme */
 .input-field {
   display: block;
   width: 100%;
   padding: 0.75rem 1rem;
   border-width: 1px;
-  border-color: #d1d5db; /* gray-300 direct */
-  border-radius: 0.5rem;
-  background-color: white;
-  color: #1f2937; /* gray-900 direct */
+  border-color: #334d66; /* dark-border-light */
+  border-radius: 0.75rem; /* rounded-xl matches new designs */
+  background-color: #243647; /* dark-bg-card */
+  color: white;
   font-size: 1rem;
   line-height: 1.5;
   transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
 }
 .input-field:focus {
   outline: none;
-  border-color: #3b82f6; /* blue-500 direct */
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+  border-color: #1572cf; /* blue-call-to-action */
+  box-shadow: 0 0 0 3px rgba(21, 114, 207, 0.2); /* blue-call-to-action with opacity */
 }
 .input-field::placeholder {
-  color: #6b7280; /* gray-500 direct */
+  color: #92adc8; /* dark-text-blue */
   opacity: 0.8;
 }
 
-/* Custom Button Styles (Ensure these use direct hex/tailwind classes if :root removed) */
+/* Custom Button Styles (used by older components, new HTMLs mostly use direct classes) */
 .btn-primary {
-  background-color: #3b82f6; /* blue-500 direct */
-  background-image: linear-gradient(to right, #3b82f6, #2563eb); /* blue-500 to blue-600 direct */
+  background-color: #3b82f6; /* blue-500 */
+  background-image: linear-gradient(to right, #3b82f6, #2563eb); /* blue-500 to blue-600 */
   color: white;
   font-weight: 600;
   padding: 0.75rem 1.5rem;
@@ -94,8 +72,8 @@
 }
 
 .btn-secondary {
-  background-color: #f9fafb; /* light gray direct */
-  color: #1f2937; /* gray-900 direct */
+  background-color: #f9fafb;
+  color: #1f2937;
   font-weight: 500;
   padding: 0.75rem 1.5rem;
   border-radius: 0.5rem;
@@ -117,70 +95,37 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
-/* ... keep custom scrollbar, A4, animations, section-card, hover-lift, transition-all-fast as they are ... */
+/* Custom Scrollbar */
+.custom-scrollbar::-webkit-scrollbar { width: 8px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: #888; border-radius: 10px; }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #555; }
 
-/* Custom Scrollbar (for editor/preview) - for Webkit browsers */
-.custom-scrollbar::-webkit-scrollbar {
-  width: 8px;
-}
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 10px;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #888;
-  border-radius: 10px;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #555;
-}
+/* A4-like aspect ratio */
+.min-h-\[A4\] { min-height: calc(297mm / 2.54cm * 96px); }
 
-/* A4-like aspect ratio (approx) */
-.min-h-\[A4\] {
-  min-height: calc(297mm / 2.54cm * 96px);
-}
-
-/* Basic Fade-in Animations (Adjusted timing for smoother feel) */
+/* Animations */
 @keyframes fadeInDown {
-  from {
-    opacity: 0;
-    transform: translateY(-15px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(-15px); }
+  to { opacity: 1; transform: translateY(0); }
 }
-
 @keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(15px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(15px); }
+  to { opacity: 1; transform: translateY(0); }
 }
+.animate-fade-in-down { animation: fadeInDown 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; }
+.animate-fade-in-up { animation: fadeInUp 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; }
 
-.animate-fade-in-down {
-  animation: fadeInDown 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
-}
-
-.animate-fade-in-up {
-  animation: fadeInUp 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
-}
-
-/* Additional UI effects (section-card, hover-lift, transition-all-fast) */
+/* Additional UI effects */
 .section-card {
-  background-color: rgba(255, 255, 255, 0.7);
+  background-color: rgba(36, 54, 71, 0.8); /* dark-bg-card with opacity */
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   border-radius: 0.75rem;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15); /* Slightly stronger shadow */
   padding: 1.5rem;
   margin-bottom: 1.5rem;
-  border: 1px solid #e5e7eb;
+  border: 1px solid #404d59; /* Equivalent to border-[#404d59] */
 }
 
 .hover-lift {
@@ -188,9 +133,51 @@
 }
 .hover-lift:hover {
   transform: translateY(-3px);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2); /* Stronger shadow on hover */
 }
 
 .transition-all-fast {
   transition: all 0.2s ease-in-out;
+}
+
+/* New form-input base styles matching Stitch's HTML, for select/input fields */
+/* We'll use these to overwrite/augment input-field for select components */
+.form-input {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  flex: 1;
+  resize: none;
+  overflow: hidden;
+  border-radius: 0.75rem; /* rounded-xl */
+  color: white;
+  background-color: #243647; /* dark-bg-card */
+  border: none;
+  height: 3.5rem; /* h-14 */
+  padding: 1rem; /* p-4 */
+  font-size: 1rem;
+  font-weight: normal;
+  line-height: normal;
+  outline: 0;
+  box-shadow: none;
+  transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+.form-input:focus {
+  border-color: #1572cf; /* blue-call-to-action */
+  box-shadow: 0 0 0 3px rgba(21, 114, 207, 0.2);
+}
+.form-input::placeholder {
+  color: #92adc8; /* dark-text-blue */
+}
+
+/* Custom styling for select elements, using a custom SVG for the arrow */
+.form-select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url('data:image/svg+xml,%3csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2724px%27 height=%2724px%27 fill=%27rgb(146,173,200)%27 viewBox=%270 0 256 256%27%3e%3cpath d=%27M181.66,170.34a8,8,0,0,1,0,11.32l-48,48a8,8,0,0,1-11.32,0l-48-48a8,8,0,0,1,11.32-11.32L128,212.69l42.34-42.35A8,8,0,0,1,181.66,170.34Zm-96-84.68L128,43.31l42.34,42.35a8,8,0,0,0,11.32-11.32l-48-48a8,8,0,0,0-11.32,0l-48,48A8,8,0,0,0,85.66,85.66Z%27%3e%3c/path%3e%3c/svg%3e');
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    background-size: 1.5rem; /* Adjust size as needed */
+    padding-right: 2.5rem; /* Make space for the arrow */
 }
