@@ -1,26 +1,196 @@
-@import "tailwindcss";
+/* src/app/globals.css */
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+/* Remove or comment out the :root custom color variables */
+/* :root {
+  --color-primary: #3b82f6;
+  --color-primary-dark: #2563eb;
+  --color-primary-darker: #1d4ed8;
+  --color-accent: #6366f1;
+  --color-bg-light: #f9fafb;
+  --color-bg-page: #eef2f6;
+  --color-text-dark: #1f2937;
+  --color-text-medium: #4b5563;
+  --color-text-light: #6b7280;
+  --color-border-light: #e5e7eb;
+  --color-border-medium: #d1d5db;
+  --color-gray-soft: #f0f4f8;
+} */
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* Base layer for global styles and font variables */
+@layer base {
+  html {
+    font-family: var(--font-inter), sans-serif;
+    scroll-behavior: smooth;
+    /* Remove background-color here if you had it, as the new page.tsx controls it */
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-outfit), sans-serif;
+  }
+  .font-inter {
+    font-family: var(--font-inter), sans-serif;
+  }
+  .font-outfit {
+    font-family: var(--font-outfit), sans-serif;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* KEEP all your other custom classes (.input-field, .btn-primary, etc.) below this line.
+   They might be used in the /builder page later.
+   Make sure their properties are direct CSS, not using var() if you remove the :root block.
+*/
+
+/* Custom Input Field Styles (Ensure these use direct hex/tailwind classes if :root removed) */
+.input-field {
+  display: block;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border-width: 1px;
+  border-color: #d1d5db; /* gray-300 direct */
+  border-radius: 0.5rem;
+  background-color: white;
+  color: #1f2937; /* gray-900 direct */
+  font-size: 1rem;
+  line-height: 1.5;
+  transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+.input-field:focus {
+  outline: none;
+  border-color: #3b82f6; /* blue-500 direct */
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+.input-field::placeholder {
+  color: #6b7280; /* gray-500 direct */
+  opacity: 0.8;
+}
+
+/* Custom Button Styles (Ensure these use direct hex/tailwind classes if :root removed) */
+.btn-primary {
+  background-color: #3b82f6; /* blue-500 direct */
+  background-image: linear-gradient(to right, #3b82f6, #2563eb); /* blue-500 to blue-600 direct */
+  color: white;
+  font-weight: 600;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);
+  transition: all 0.2s ease-in-out;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.btn-primary:hover {
+  background-color: #2563eb;
+  background-image: linear-gradient(to right, #2563eb, #1d4ed8);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(59, 130, 246, 0.4);
+}
+.btn-primary:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 5px rgba(59, 130, 246, 0.2);
+}
+
+.btn-secondary {
+  background-color: #f9fafb; /* light gray direct */
+  color: #1f2937; /* gray-900 direct */
+  font-weight: 500;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  border: 1px solid #d1d5db;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease-in-out;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.btn-secondary:hover {
+  background-color: #d1d5db;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+.btn-secondary:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+/* ... keep custom scrollbar, A4, animations, section-card, hover-lift, transition-all-fast as they are ... */
+
+/* Custom Scrollbar (for editor/preview) - for Webkit browsers */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* A4-like aspect ratio (approx) */
+.min-h-\[A4\] {
+  min-height: calc(297mm / 2.54cm * 96px);
+}
+
+/* Basic Fade-in Animations (Adjusted timing for smoother feel) */
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-down {
+  animation: fadeInDown 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+/* Additional UI effects (section-card, hover-lift, transition-all-fast) */
+.section-card {
+  background-color: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 0.75rem;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  border: 1px solid #e5e7eb;
+}
+
+.hover-lift {
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+.hover-lift:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+.transition-all-fast {
+  transition: all 0.2s ease-in-out;
 }

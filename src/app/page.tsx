@@ -1,103 +1,185 @@
-import Image from "next/image";
+// src/app/landing/page.tsx
+import React from 'react';
+import Link from 'next/link'; // For navigation to builder page
+import { FileText, PencilLine, Share2 } from 'lucide-react'; // Icons for features section
 
-export default function Home() {
+// Helper component for the feature cards - defined once here for reusability
+interface FeatureCardProps {
+  icon: React.ElementType; // Lucide icon component
+  title: string;
+  description: string;
+}
+
+const FeatureCard: React.FC<FeatureCardProps> = ({ icon: Icon, title, description }) => (
+  <div className="flex flex-1 gap-3 rounded-lg border border-dark-border-primary bg-dark-bg-secondary p-4 flex-col hover-lift transition-all-fast">
+    <div className="text-white">
+      <Icon size={24} /> {/* Use Lucide icon */}
+    </div>
+    <div className="flex flex-col gap-1">
+      <h2 className="text-white text-base font-bold leading-tight font-outfit">{title}</h2> {/* Applied Outfit font */}
+      <p className="text-dark-text-light text-sm font-normal leading-normal font-inter">{description}</p> {/* Applied Inter font */}
+    </div>
+  </div>
+);
+
+export default function LandingPage() {
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <div className="relative flex size-full min-h-screen flex-col bg-dark-bg-primary dark group/design-root overflow-x-hidden">
+      <div className="layout-container flex h-full grow flex-col">
+        {/* Header Section */}
+        <header className="flex items-center justify-between whitespace-nowrap border-b border-solid border-b-dark-border-primary px-5 sm:px-10 py-3"> {/* Adjusted px for better mobile/tablet */}
+          <div className="flex items-center gap-4 text-white">
+            {/* Logo and App Name */}
+            <Link href="/" className="flex items-center gap-2">
+                {/* Keeping the icon from Stitch, but could be replaced with a Lucide icon */}
+                <div className="size-6"> {/* Adjusted size for better visibility */}
+                    <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <g clipPath="url(#clip0_6_535)">
+                            <path
+                                fillRule="evenodd"
+                                clipRule="evenodd"
+                                d="M47.2426 24L24 47.2426L0.757355 24L24 0.757355L47.2426 24ZM12.2426 21H35.7574L24 9.24264L12.2426 21Z"
+                                fill="currentColor"
+                            ></path>
+                        </g>
+                        <defs>
+                            <clipPath id="clip0_6_535"><rect width="48" height="48" fill="white"></rect></clipPath>
+                        </defs>
+                    </svg>
+                </div>
+                <h2 className="text-white text-xl font-bold leading-tight tracking-[-0.015em] font-outfit">ResumeCraft</h2>
+            </Link>
+          </div>
+          <div className="flex flex-1 justify-end gap-4 sm:gap-8"> {/* Adjusted gap */}
+            {/* Desktop Navigation Links */}
+            <div className="hidden sm:flex items-center gap-4 sm:gap-9"> {/* Hide on extra small screens */}
+              <a className="text-white text-sm font-medium leading-normal hover:text-gray-300 transition-colors font-inter" href="#">Templates</a>
+              <a className="text-white text-sm font-medium leading-normal hover:text-gray-300 transition-colors font-inter" href="#">Examples</a>
+              <a className="text-white text-sm font-medium leading-normal hover:text-gray-300 transition-colors font-inter" href="#">Pricing</a>
+            </div>
+            {/* Action Buttons */}
+            <div className="flex gap-2">
+              <Link href="/builder" passHref>
+                <button
+                  className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-10 px-4 bg-light-accent-button text-dark-bg-primary text-sm font-bold leading-normal tracking-[0.015em] hover:opacity-90 transition-opacity font-inter"
+                >
+                  <span className="truncate">Create My Resume</span>
+                </button>
+              </Link>
+              <button
+                className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-10 px-4 bg-dark-border-primary text-white text-sm font-bold leading-normal tracking-[0.015em] hover:opacity-90 transition-opacity font-inter"
+              >
+                <span className="truncate">Log In</span>
+              </button>
+            </div>
+          </div>
+        </header>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+        {/* Main Content Area */}
+        <div className="px-5 sm:px-10 lg:px-40 flex flex-1 justify-center py-5"> {/* Adjusted px for better responsiveness */}
+          <div className="layout-content-container flex flex-col max-w-[960px] flex-1">
+            {/* Hero Section */}
+            <div className="@container">
+              <div className="@[480px]:p-4">
+                <div
+                  className="flex min-h-[480px] flex-col gap-6 bg-cover bg-center bg-no-repeat @[480px]:gap-8 @[480px]:rounded-xl items-center justify-center p-4"
+                  style={{ backgroundImage: 'linear-gradient(rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0.4) 100%), url("https://images.unsplash.com/photo-1586281380349-632531db7ed4?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80")' }}
+                >
+                  <div className="flex flex-col gap-2 text-center animate-fade-in-down">
+                    <h1 className="text-white text-4xl font-black leading-tight tracking-[-0.033em] @[480px]:text-5xl @[480px]:font-black @[480px]:leading-tight @[480px]:tracking-[-0.033em] font-outfit">
+                      Craft a Resume That Gets You Hired
+                    </h1>
+                    <h2 className="text-white text-sm font-normal leading-normal @[480px]:text-base @[480px]:font-normal @[480px]:leading-normal font-inter">
+                      Our intuitive resume builder helps you create a professional resume that highlights your skills and experience, landing you the job you deserve.
+                    </h2>
+                  </div>
+                  <Link href="/builder" passHref>
+                    <button
+                      className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-10 px-4 @[480px]:h-12 @[480px]:px-5 bg-light-accent-button text-dark-bg-primary text-sm font-bold leading-normal tracking-[0.015em] @[480px]:text-base @[480px]:font-bold @[480px]:leading-normal @[480px]:tracking-[0.015em] w-fit hover:opacity-90 transition-opacity animate-fade-in-up font-inter"
+                    >
+                      <span className="truncate">Get Started</span>
+                    </button>
+                  </Link>
+                </div>
+              </div>
+            </div>
+
+            {/* Features Section */}
+            <div className="flex flex-col gap-10 px-4 py-10 @container">
+              <div className="flex flex-col gap-6">
+                <div className="flex flex-col gap-4">
+                  <h1 className="text-white tracking-tight text-[32px] font-bold leading-tight @[480px]:text-4xl @[480px]:font-black @[480px]:leading-tight @[480px]:tracking-[-0.033em] max-w-[720px] font-outfit">
+                    Key Features
+                  </h1>
+                  <p className="text-white text-base font-normal leading-normal max-w-[720px] font-inter">
+                    ResumeCraft offers a range of features designed to make resume building easy and effective.
+                  </p>
+                </div>
+                <button
+                  className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-10 px-4 @[480px]:h-12 @[480px]:px-5 bg-light-accent-button text-dark-bg-primary text-sm font-bold leading-normal tracking-[0.015em] @[480px]:text-base @[480px]:font-bold @[480px]:leading-normal @[480px]:tracking-[0.015em] w-fit hover:opacity-90 transition-opacity font-inter"
+                >
+                  <span className="truncate">View All Features</span>
+                </button>
+              </div>
+              <div className="grid grid-cols-[repeat(auto-fit,minmax(158px,1fr))] gap-3 p-0">
+                <FeatureCard
+                  icon={FileText}
+                  title="Professional Templates"
+                  description="Choose from a variety of professionally designed templates to suit your industry and experience level."
+                />
+                <FeatureCard
+                  icon={PencilLine}
+                  title="Easy Customization"
+                  description="Customize your resume with our drag-and-drop editor, ensuring it reflects your unique qualifications."
+                />
+                <FeatureCard
+                  icon={Share2}
+                  title="Export & Share"
+                  description="Easily export your resume in various formats and share it with potential employers."
+                />
+              </div>
+            </div>
+
+            {/* Call to Action Section */}
+            <div className="px-4 py-10 @container"> {/* Removed unnecessary justify-end from flex */}
+              <div className="flex flex-col justify-end gap-6 @[480px]:gap-8 @[480px]:px-10 @[480px]:py-20">
+                <div className="flex flex-col gap-2 text-center">
+                  <h1 className="text-white tracking-tight text-[32px] font-bold leading-tight @[480px]:text-4xl @[480px]:font-black @[480px]:leading-tight @[480px]:tracking-[-0.033em] max-w-[720px] font-outfit">
+                    Ready to Take the Next Step?
+                  </h1>
+                  <p className="text-white text-base font-normal leading-normal max-w-[720px] font-inter">Start building your professional resume today and take control of your career.</p>
+                </div>
+                <div className="flex flex-1 justify-center">
+                  <div className="flex justify-center">
+                    <Link href="/builder" passHref>
+                      <button
+                        className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-10 px-4 @[480px]:h-12 @[480px]:px-5 bg-light-accent-button text-dark-bg-primary text-sm font-bold leading-normal tracking-[0.015em] @[480px]:text-base @[480px]:font-bold @[480px]:leading-normal @[480px]:tracking-[0.015em] grow hover:opacity-90 transition-opacity font-inter"
+                      >
+                        <span className="truncate">Create My Resume</span>
+                      </button>
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+
+        {/* Footer Section */}
+        <footer className="flex justify-center">
+          <div className="flex max-w-[960px] flex-1 flex-col">
+            <footer className="flex flex-col gap-6 px-5 py-10 text-center @container">
+              <div className="flex flex-wrap items-center justify-center gap-6 @[480px]:flex-row @[480px]:justify-around">
+                <a className="text-dark-text-light text-base font-normal leading-normal min-w-40 hover:text-white transition-colors font-inter" href="#">About Us</a>
+                <a className="text-dark-text-light text-base font-normal leading-normal min-w-40 hover:text-white transition-colors font-inter" href="#">Contact</a>
+                <a className="text-dark-text-light text-base font-normal leading-normal min-w-40 hover:text-white transition-colors font-inter" href="#">Privacy Policy</a>
+                <a className="text-dark-text-light text-base font-normal leading-normal min-w-40 hover:text-white transition-colors font-inter" href="#">Terms of Service</a>
+              </div>
+              <p className="text-dark-text-light text-base font-normal leading-normal font-inter">© {new Date().getFullYear()} ResumeCraft. All rights reserved.</p>
+            </footer>
+          </div>
+        </footer>
+      </div>
     </div>
   );
 }
