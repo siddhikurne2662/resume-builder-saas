@@ -3,7 +3,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Download, LayoutTemplate, User, Menu, X, ZoomIn, ZoomOut, HelpCircle, UserCheck, Settings } from 'lucide-react';
+import { Download, LayoutTemplate, User, Menu, X, ZoomIn, ZoomOut, UserCheck, Settings } from 'lucide-react';
 
 interface HeaderProps {
   onDownloadPdf?: () => void;
@@ -55,6 +55,16 @@ export default function Header({
 
   const handleLogout = () => {
     console.log("User logged out!");
+    // Firebase logout would go here:
+    // import { getAuth, signOut } from 'firebase/auth';
+    // const auth = getAuth();
+    // signOut(auth).then(() => {
+    //   // Sign-out successful. Redirect to login or home.
+    //   console.log("User signed out");
+    // }).catch((error) => {
+    //   // An error happened.
+    //   console.error("Sign out error:", error);
+    // });
   };
 
   const userInitial = userName.charAt(0).toUpperCase(); // Get the first letter of the name
@@ -85,10 +95,7 @@ export default function Header({
             <Link href="/settings" className="text-white text-sm font-medium hover:text-dark-text-light transition-colors font-inter">
               Settings
             </Link>
-            {/* Keeping Help for now, as it's a standard nav item */}
-            <Link href="#" className="text-white text-sm font-medium hover:text-dark-text-light transition-colors font-inter">
-              <HelpCircle className="h-5 w-5" />
-            </Link>
+            {/* Removed Help Link */}
           </div>
 
           {/* Builder-specific actions or global actions */}
@@ -147,12 +154,7 @@ export default function Header({
               </>
             )}
 
-            {/* Upgrade Button - Re-added as per original design's spirit, you can hide with `hidden` if not needed */}
-            <button
-              className="bg-dark-bg-card text-white hover:bg-dark-border-light font-bold px-4 py-2 rounded-full transition-colors hidden lg:flex items-center font-inter"
-            >
-              Upgrade
-            </button>
+            {/* Removed Upgrade Button */}
 
             {/* User Avatar/Profile - UPDATED WITH CONDITIONAL IMAGE/INITIAL */}
             <div className="relative">

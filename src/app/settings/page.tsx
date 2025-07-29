@@ -1,19 +1,24 @@
 // src/app/settings/page.tsx
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Header from '../components/Header';
 import FloatingLabelInput from '../components/FloatingLabelInput';
 import { Toaster, toast } from 'react-hot-toast';
 import { UserCheck, Lock, Palette } from 'lucide-react'; // Icons for preferences
+import { getAuth, updateProfile, updatePassword, signOut } from 'firebase/auth'; // Import Firebase Auth
+import { doc, getDoc, setDoc } from 'firebase/firestore'; // Import Firestore
+import { db } from '@/lib/firebase'; // Import initialized Firestore
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState('account');
+  const auth = getAuth();
+  const user = auth.currentUser;
 
   const [profile, setProfile] = useState({
-    name: 'Sophia Carter',
-    email: 'sophia.carter@example.com',
+    name: user?.displayName || '',
+    email: user?.email || '',
     currentPassword: '',
     newPassword: '',
     confirmNewPassword: '',
@@ -25,7 +30,34 @@ export default function SettingsPage() {
     autoSave: true,
   });
 
-  const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Load user profile and preferences from Firestore on component mount
+  useEffect(() => {
+    if (user) {
+      const fetchUserData = async () => {
+        const userDocRef = doc(db, 'users', user.uid);
+        const docSnap = await getDoc(userDocRef);
+
+        if (docSnap.exists()) {
+          const userData = docSnap.data();
+          setProfile(prev => ({
+            ...prev,
+            name: userData.name || user.displayName || '',
+            email: userData.email || user.email || '',
+          }));
+          setPreferences(prev => ({
+            ...prev,
+            theme: userData.preferences?.theme || 'dark',
+            notifications: userData.preferences?.notifications !== undefined ? userData.preferences.notifications : true,
+            autoSave: userData.preferences?.autoSave !== undefined ? userData.preferences.autoSave : true,
+          }));
+        }
+      };
+      fetchUserData();
+    }
+  }, [user]);
+
+
+  const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setProfile(prev => ({ ...prev, [name]: value }));
   };
@@ -38,19 +70,64 @@ export default function SettingsPage() {
     }));
   };
 
-  const handleUpdateProfile = () => {
-    console.log("Updating profile:", profile);
-    toast.success("Profile updated successfully!");
-    setProfile(prev => ({ ...prev, currentPassword: '', newPassword: '', confirmNewPassword: '' }));
+  const handleUpdateProfile = async () => {
+    if (!user) {
+      toast.error("You must be logged in to update your profile.");
+      return;
+    }
+    try {
+      // Update display name in Firebase Auth
+      if (profile.name !== user.displayName) {
+        await updateProfile(user, { displayName: profile.name });
+      }
+
+      // Update password if new password fields are filled
+      if (profile.newPassword && profile.newPassword === profile.confirmNewPassword) {
+        // In a real app, you'd re-authenticate the user before updating password
+        // to prevent recent login requirement errors.
+        await updatePassword(user, profile.newPassword);
+        toast.success("Password updated successfully!");
+      } else if (profile.newPassword || profile.confirmNewPassword) {
+        toast.error("New passwords do not match or are incomplete.");
+        return;
+      }
+
+      // Save additional profile data to Firestore (like address, if added to profile state)
+      const userDocRef = doc(db, 'users', user.uid);
+      await setDoc(userDocRef, {
+        name: profile.name,
+        email: profile.email, // Email change requires re-authentication and specific Firebase methods
+        // Add other profile fields here if you expand the profile state
+      }, { merge: true }); // Use merge to not overwrite other fields
+
+      toast.success("Profile updated successfully!");
+      setProfile(prev => ({ ...prev, currentPassword: '', newPassword: '', confirmNewPassword: '' }));
+
+    } catch (error: any) {
+      console.error("Error updating profile:", error);
+      toast.error(`Error updating profile: ${error.message}`);
+    }
   };
 
-  const handleUpdatePreferences = () => {
-    console.log("Updating preferences:", preferences);
-    toast.success("Preferences saved!");
+  const handleUpdatePreferences = async () => {
+    if (!user) {
+      toast.error("You must be logged in to save preferences.");
+      return;
+    }
+    try {
+      const userDocRef = doc(db, 'users', user.uid);
+      await setDoc(userDocRef, {
+        preferences: preferences,
+      }, { merge: true });
+      toast.success("Preferences saved!");
+    } catch (error: any) {
+      console.error("Error saving preferences:", error);
+      toast.error(`Error saving preferences: ${error.message}`);
+    }
   };
 
-  const sampleUserName = "Sophia";
-  const sampleUserProfileImage = 'https://images.unsplash.com/photo-1494790108377-be9c29b29329?q=80&w=1000&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D';
+  const sampleUserName = user?.displayName || "Guest";
+  const sampleUserProfileImage = user?.photoURL || 'https://images.unsplash.com/photo-1494790108377-be9c29b29329?q=80&w=1000&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'; // Fallback image
 
   return (
     <div className="relative flex size-full min-h-screen flex-col bg-dark-bg-main font-inter">
@@ -90,8 +167,8 @@ export default function SettingsPage() {
             <>
               <h2 className="text-white text-2xl font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5 font-outfit">Profile</h2>
               <div className="flex flex-col gap-4 px-4 py-3">
-                <FloatingLabelInput id="name" label="Name" type="text" name="name" value={profile.name} onChange={handleProfileChange} />
-                <FloatingLabelInput id="email" label="Email" type="email" name="email" value={profile.email} onChange={handleProfileChange} />
+                <FloatingLabelInput id="name" name="name" label="Full Name" type="text" value={profile.name} onChange={handleProfileChange} />
+                <FloatingLabelInput id="email" name="email" label="Email" type="email" value={profile.email} onChange={handleProfileChange} disabled /> {/* Email often disabled as it requires re-authentication and specific Firebase methods */}
                 <FloatingLabelInput id="current-password" label="Current Password" type="password" name="currentPassword" value={profile.currentPassword} onChange={handleProfileChange} />
                 <FloatingLabelInput id="new-password" label="New Password" type="password" name="newPassword" placeholder="Enter new password" value={profile.newPassword} onChange={handleProfileChange} />
                 <FloatingLabelInput id="confirm-new-password" label="Confirm New Password" type="password" name="confirmNewPassword" placeholder="Confirm new password" value={profile.confirmNewPassword} onChange={handleProfileChange} />
@@ -112,6 +189,7 @@ export default function SettingsPage() {
                 <div className="flex items-center gap-4 bg-dark-bg-card px-4 min-h-[72px] py-2 justify-between rounded-lg border border-dark-border-light">
                   <div className="flex flex-col justify-center">
                     <p className="text-white text-base font-medium leading-normal line-clamp-1 font-inter flex items-center gap-2">
+                      {/* Renamed Settings icon to UserCheck for consistency, or import Bell for notifications */}
                       <Palette className="h-5 w-5" /> Theme
                     </p>
                     <p className="text-dark-text-blue text-sm font-normal leading-normal line-clamp-2 font-inter">Choose your preferred application theme.</p>
@@ -133,7 +211,7 @@ export default function SettingsPage() {
                 <div className="flex items-center gap-4 bg-dark-bg-card px-4 min-h-[72px] py-2 justify-between rounded-lg border border-dark-border-light">
                   <div className="flex flex-col justify-center">
                     <p className="text-white text-base font-medium leading-normal line-clamp-1 font-inter flex items-center gap-2">
-                      <Settings className="h-5 w-5" /> Enable Notifications
+                      <UserCheck className="h-5 w-5" /> Enable Notifications
                     </p>
                     <p className="text-dark-text-blue text-sm font-normal leading-normal line-clamp-2 font-inter">Receive updates about your resumes and account.</p>
                   </div>

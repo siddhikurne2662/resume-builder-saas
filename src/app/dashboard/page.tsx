@@ -1,10 +1,12 @@
 // src/app/dashboard/page.tsx
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react'; // Import useEffect and useState
 import Link from 'next/link';
+import { useRouter } from 'next/navigation'; // Import useRouter for redirection
+import { getAuth, onAuthStateChanged } from 'firebase/auth'; // Import Firebase auth functions
 import Header from '../components/Header';
-import { Home, FileText, ListOrdered, Settings, HelpCircle } from 'lucide-react'; // Lucide icons
+import { Home, FileText, ListOrdered, Settings, UserCheck } from 'lucide-react';
 
 // Helper component for resume cards
 interface ResumeCardProps {
@@ -35,9 +37,42 @@ const ResumeCard: React.FC<ResumeCardProps> = ({ title, lastEdited, imageUrl, id
 );
 
 export default function DashboardPage() {
-  const sampleUserName = "Sophia";
-  const sampleUserProfileImage = 'https://images.unsplash.com/photo-1494790108377-be9c29b29329?q=80&w=1000&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D';
+  const router = useRouter();
+  const auth = getAuth();
+  const [user, setUser] = useState(auth.currentUser);
+  const [loadingAuth, setLoadingAuth] = useState(true);
 
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      if (!currentUser) {
+        // No user is logged in, redirect to login page
+        router.push('/auth/login');
+      } else {
+        setUser(currentUser);
+      }
+      setLoadingAuth(false);
+    });
+
+    // Clean up subscription on unmount
+    return () => unsubscribe();
+  }, [auth, router]);
+
+
+  // Show a loading state or nothing while authentication status is being determined
+  if (loadingAuth || !user) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-dark-bg-main text-white text-lg">
+        Loading dashboard...
+      </div>
+    );
+  }
+
+  // Use dynamic user data for Header
+  const sampleUserName = user.displayName || user.email?.split('@')[0] || "User";
+  const sampleUserProfileImage = user.photoURL || 'https://images.unsplash.com/photo-1494790108377-be9c29b29329?q=80&w=1000&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'; // Fallback if photoURL is null
+
+  // This data would be fetched from Firebase Firestore for the logged-in user
+  // For now, keeping sample data. You'd replace this with Firestore queries.
   const userResumes = [
     { id: 'resume-1', title: 'Software Engineer Resume', lastEdited: 'July 15, 2024', imageUrl: 'https://images.unsplash.com/photo-1517048676732-d65bc937f952?q=80&w=1500&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D' },
     { id: 'resume-2', title: 'Product Manager Resume', lastEdited: 'June 22, 2024', imageUrl: 'https://images.unsplash.com/photo-1543286386-8d59103de0cd?q=80&w=1500&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D' },
@@ -53,19 +88,12 @@ export default function DashboardPage() {
 
   return (
     <div className="relative flex size-full min-h-screen flex-col bg-dark-bg-main font-inter">
-      <Header userName={sampleUserName} userProfileImageUrl={sampleUserProfileImage} /> {/* Pass props */}
+      <Header userName={sampleUserName} userProfileImageUrl={sampleUserProfileImage} />
       <div className="gap-1 px-4 sm:px-6 lg:px-6 flex flex-1 justify-center py-5">
         <div className="layout-content-container flex flex-col w-80 lg:w-[280px] xl:w-[320px] bg-dark-bg-main p-4">
           <div className="flex h-full min-h-[700px] flex-col justify-between bg-dark-bg-main p-4">
             <div className="flex flex-col gap-4">
-              {/* User Profile Info on Sidebar */}
-              <div className="flex gap-3 items-center">
-                <div
-                  className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10"
-                  style={{ backgroundImage: `url("${sampleUserProfileImage}")` }} // Use the sample image from the header props
-                ></div>
-                <h1 className="text-white text-base font-medium leading-normal font-inter">Sophia Carter</h1>
-              </div>
+              {/* Removed User Profile Info on Sidebar - now relies on Header for user info */}
               {/* Navigation Links */}
               <div className="flex flex-col gap-2">
                 <Link href="/dashboard" className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-dark-bg-card transition-colors">
@@ -84,11 +112,19 @@ export default function DashboardPage() {
                   <Settings className="text-white h-6 w-6" />
                   <p className="text-white text-sm font-medium leading-normal font-inter">Settings</p>
                 </Link>
-                <Link href="#" className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-dark-bg-card transition-colors">
-                  <HelpCircle className="text-white h-6 w-6" />
-                  <p className="text-white text-sm font-medium leading-normal font-inter">Help</p>
-                </Link>
+                {/* Removed Help Link from sidebar as well */}
               </div>
+            </div>
+            {/* Added Login/Register Links at the bottom of the sidebar */}
+            <div className="flex flex-col gap-2 mt-auto">
+                <Link href="/auth/login" className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-dark-bg-card transition-colors">
+                    <UserCheck className="text-white h-6 w-6" />
+                    <p className="text-white text-sm font-medium leading-normal font-inter">Login</p>
+                </Link>
+                <Link href="/auth/register" className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-dark-bg-card transition-colors">
+                    <UserCheck className="text-white h-6 w-6" />
+                    <p className="text-white text-sm font-medium leading-normal font-inter">Register</p>
+                </Link>
             </div>
           </div>
         </div>
@@ -108,7 +144,7 @@ export default function DashboardPage() {
           </div>
 
           {/* List of User Resumes */}
-          <h3 className="text-white text-xl font-bold leading-tight tracking-[-0.015em] px-4 pb-2 pt-4 font-outfit">My Resumes</h3>
+          <h3 className="text-white text-xl font-bold leading-tight tracking-[-0.015em] px-4 pb-2 pt-4 font-outfit">Your Current Resumes</h3>
           <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {userResumes.map(resume => (
               <ResumeCard
@@ -122,7 +158,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Templates Section */}
-          <h3 className="text-white text-xl font-bold leading-tight tracking-[-0.015em] px-4 pb-2 pt-4 font-outfit">Templates</h3>
+          <h3 className="text-white text-xl font-bold leading-tight tracking-[-0.015em] px-4 pb-2 pt-4 font-outfit">Available Templates</h3>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 p-4">
             {templates.map((template, index) => (
               <div key={index} className="flex flex-col gap-3 pb-3">

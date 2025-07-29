@@ -1,4 +1,4 @@
-// src/app/landing/page.tsx
+// src/app/page.tsx
 import React from 'react';
 import Link from 'next/link';
 import { FileText, PencilLine, Share2 } from 'lucide-react';
@@ -53,7 +53,7 @@ export default function LandingPage() {
                       Our intuitive resume builder helps you create a professional resume that highlights your skills and experience, landing you the job you deserve.
                     </h2>
                   </div>
-                  <Link href="/builder" passHref>
+                  <Link href="/auth/register" passHref> {/* CHANGED: Redirect to register page */}
                     <button
                       className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-10 px-4 @[480px]:h-12 @[480px]:px-5 bg-light-accent-button text-dark-bg-primary text-sm font-bold leading-normal tracking-[0.015em] @[480px]:text-base @[480px]:font-bold @[480px]:leading-normal @[480px]:tracking-[0.015em] w-fit hover:opacity-90 transition-opacity animate-fade-in-up font-inter"
                     >
@@ -111,7 +111,7 @@ export default function LandingPage() {
                 </div>
                 <div className="flex flex-1 justify-center">
                   <div className="flex justify-center">
-                    <Link href="/builder" passHref>
+                    <Link href="/auth/register" passHref> {/* CHANGED: Redirect to register page */}
                       <button
                         className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-10 px-4 @[480px]:h-12 @[480px]:px-5 bg-light-accent-button text-dark-bg-primary text-sm font-bold leading-normal tracking-[0.015em] @[480px]:text-base @[480px]:font-bold @[480px]:leading-normal @[480px]:tracking-[0.015em] grow hover:opacity-90 transition-opacity font-inter"
                       >
