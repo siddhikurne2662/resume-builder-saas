@@ -4,37 +4,73 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import FloatingLabelInput from '../../components/FloatingLabelInput';
+import Header from '../../components/Header'; // Import the main Header
+import { Mail, Lock, AlertCircle, ArrowRight, CheckCircle } from 'lucide-react'; // Needed for icons
 import { Toaster, toast } from 'react-hot-toast';
-import { getAuth, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth'; // Import GoogleAuthProvider and signInWithPopup
-import { doc, setDoc, getDoc } from 'firebase/firestore'; // Import doc and setDoc
-import { db } from '@/lib/firebase'; // Import db
+import { getAuth, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [formData, setFormData] = useState({
+    email: '',
+    password: ''
+  });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isLoading, setIsLoading] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false); // State for "Remember me"
   const auth = getAuth();
+
+  const handleInputChange = (field: 'email' | 'password') => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setFormData(prev => ({ ...prev, [field]: e.target.value }));
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: '' }));
+    }
+  };
+
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+    if (!formData.email.trim()) newErrors.email = 'Email is required';
+    else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = 'Invalid email format';
+    if (!formData.password) newErrors.password = 'Password is required';
+    else if (formData.password.length < 6) newErrors.password = 'Password must be at least 6 characters'; // Firebase default minimum
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validateForm()) {
+        toast.error("Please enter valid credentials.");
+        return;
+    }
+
+    setIsLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      toast.success('Logged in successfully!');
-      // Redirect to dashboard or builder page
+      await signInWithEmailAndPassword(auth, formData.email, formData.password);
+      toast.success('Logged in successfully! Redirecting...');
       window.location.href = '/dashboard';
     } catch (error: any) {
       console.error('Login error:', error);
-      toast.error(`Login failed: ${error.message}`);
+      let errorMessage = "Login failed. Please check your credentials.";
+      if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+        errorMessage = "Invalid email or password.";
+      } else if (error.code === 'auth/invalid-email') {
+        errorMessage = "The email address is not valid.";
+      }
+      toast.error(errorMessage);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleGoogleLogin = async () => {
+    setIsLoading(true);
     const provider = new GoogleAuthProvider();
     try {
       const result = await signInWithPopup(auth, provider);
-      // The signed-in user info.
       const user = result.user;
 
-      // Check if user already exists in Firestore, if not, create a basic entry
       const userDocRef = doc(db, 'users', user.uid);
       const docSnap = await getDoc(userDocRef);
       if (!docSnap.exists()) {
@@ -49,100 +85,183 @@ export default function LoginPage() {
             notifications: true,
             autoSave: true,
           }
-        }, { merge: true }); // Use merge to avoid overwriting existing data if any
+        }, { merge: true });
       }
 
-      toast.success('Logged in with Google successfully!');
+      toast.success('Logged in with Google successfully! Redirecting...');
       window.location.href = '/dashboard';
     } catch (error: any) {
       console.error('Google login error:', error);
-      // Handle specific errors, e.g., 'auth/popup-closed-by-user'
-      toast.error(`Google login failed: ${error.message}`);
+      let errorMessage = "Google login failed. Please try again.";
+      if (error.code === 'auth/popup-closed-by-user') {
+        errorMessage = "Google sign-in popup was closed.";
+      } else if (error.code === 'auth/cancelled-popup-request') {
+        errorMessage = "Another popup was opened, please try again.";
+      } else if (error.code === 'auth/auth-domain-config-error' || error.code === 'auth/configuration-not-found') {
+        errorMessage = "Firebase Auth domain not configured. Check Firebase Console settings.";
+      }
+      toast.error(errorMessage);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <div className="relative flex size-full min-h-screen flex-col bg-dark-bg-main dark group/design-root overflow-x-hidden justify-center items-center" style={{ fontFamily: 'var(--font-inter), "Noto Sans", sans-serif' }}>
+    <div className="relative flex size-full min-h-screen flex-col bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 overflow-hidden">
       <Toaster position="bottom-right" reverseOrder={false} />
-      {/* Header taken from Stitch HTML for Auth pages */}
-      <header className="flex items-center justify-between whitespace-nowrap border-b border-solid border-b-[#243647] px-10 py-3 w-full absolute top-0">
-        <div className="flex items-center gap-4 text-white">
-          <div className="size-4">
-            {/* SVG Logo for ResumeCraft */}
-            <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <g clipPath="url(#clip0_6_535)">
-                <path fillRule="evenodd" clipRule="evenodd" d="M47.2426 24L24 47.2426L0.757355 24L24 0.757355L47.2426 24ZM12.2426 21H35.7574L24 9.24264L12.2426 21Z" fill="currentColor"></path>
-              </g>
-              <defs>
-                <clipPath id="clip0_6_535"><rect width="48" height="48" fill="white"></rect></clipPath>
-              </defs>
-            </svg>
-          </div>
-          <h2 className="text-white text-lg font-bold leading-tight tracking-[-0.015em]">ResumeCraft</h2>
-        </div>
-        <div className="flex flex-1 justify-end gap-8">
-          <div className="flex items-center gap-9">
-            <Link href="#" className="text-white text-sm font-medium leading-normal">Templates</Link>
-            <Link href="#" className="text-white text-sm font-medium leading-normal">Examples</Link>
-            <Link href="#" className="text-white text-sm font-medium leading-normal">Pricing</Link>
-          </div>
-          <Link href="/auth/login" passHref>
-            <button className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-10 px-4 bg-[#243647] text-white text-sm font-bold leading-normal tracking-[0.015em]">
-              <span className="truncate">Log In</span>
-            </button>
-          </Link>
-        </div>
-      </header>
 
-      <div className="px-40 flex flex-1 justify-center py-5 w-full items-center"> {/* Centering container */}
-        <div className="layout-content-container flex flex-col w-[512px] max-w-[512px] py-5 flex-1 bg-dark-bg-card p-8 rounded-xl shadow-lg border border-dark-border-medium mx-auto"> {/* Added mx-auto */}
-          <h2 className="text-white text-3xl font-bold text-center mb-6 font-outfit">Login to ResumeCraft</h2>
-          <form onSubmit={handleLogin} className="space-y-5">
-            <FloatingLabelInput
-              id="email"
-              label="Email"
-              type="email"
-              name="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-            <FloatingLabelInput
-              id="password"
-              label="Password"
-              type="password"
-              name="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
+      {/* Animated background elements */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-purple-500/5 rounded-full blur-3xl animate-pulse delay-500"></div>
+      </div>
+
+      {/* Main Header */}
+      <Header userName={undefined} userProfileImageUrl={undefined} /> {/* Pass undefined as no user is logged in yet */}
+
+      {/* Main Content (centered) */}
+      <div className="flex-grow flex items-center justify-center p-6"> {/* flex-grow to take remaining vertical space */}
+        <div className="w-full max-w-md">
+          {/* Card */}
+          <div className="bg-slate-800/30 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-8 shadow-2xl">
+            {/* Header */}
+            <div className="text-center mb-8">
+              <h2 className="text-3xl font-bold text-white mb-2">Welcome Back!</h2>
+              <p className="text-slate-400">Sign in to your ResumeCraft account</p>
+            </div>
+
+            {/* General Error */}
+            {errors.general && (
+              <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl">
+                <p className="text-sm text-red-400 flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4" />
+                  {errors.general}
+                </p>
+              </div>
+            )}
+
+            {/* Form */}
+            <form onSubmit={handleLogin} className="space-y-6">
+              <div>
+                <FloatingLabelInput
+                  id="email"
+                  label="Email Address"
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleInputChange('email')}
+                  required
+                  icon={Mail}
+                />
+                {errors.email && (
+                  <p className="mt-2 text-sm text-red-400 flex items-center gap-1">
+                    <AlertCircle className="w-4 h-4" />
+                    {errors.email}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <FloatingLabelInput
+                  id="password"
+                  label="Password"
+                  type="password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleInputChange('password')}
+                  required
+                  icon={Lock}
+                />
+                {errors.password && (
+                  <p className="mt-2 text-sm text-red-400 flex items-center gap-1">
+                    <AlertCircle className="w-4 h-4" />
+                    {errors.password}
+                  </p>
+                )}
+              </div>
+
+              {/* Remember Me & Forgot Password */}
+              <div className="flex items-center justify-between">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                    className="w-4 h-4 rounded border-slate-600 bg-slate-700 text-cyan-400 focus:ring-cyan-400 focus:ring-2"
+                  />
+                  <span className="text-sm text-slate-300">Remember me</span>
+                </label>
+                <Link href="/auth/forgot-password" className="text-sm text-cyan-400 hover:text-cyan-300 transition-colors duration-300">
+                  Forgot password?
+                </Link>
+              </div>
+
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full py-4 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-semibold rounded-xl transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg hover:shadow-cyan-500/25 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2"
+              >
+                {isLoading ? (
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    Signing In...
+                  </div>
+                ) : (
+                  <>
+                    Sign In
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
+              </button>
+            </form>
+
+            {/* Divider */}
+            <div className="flex items-center my-6">
+              <div className="flex-1 h-px bg-slate-700"></div>
+              <span className="px-4 text-slate-400 text-sm">or</span>
+              <div className="flex-1 h-px bg-slate-700"></div>
+            </div>
+
+            {/* Google Sign In */}
             <button
-              type="submit"
-              className="w-full flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-10 px-4 bg-blue-call-to-action text-white text-sm font-bold leading-normal tracking-[0.015em] hover:bg-blue-button-hover transition-colors font-inter"
+              onClick={handleGoogleLogin}
+              disabled={isLoading}
+              className="w-full py-4 bg-white hover:bg-gray-50 text-gray-900 font-semibold rounded-xl transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
             >
-              <span className="truncate">Login</span>
+              <svg className="w-5 h-5" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+              </svg>
+              Continue with Google
             </button>
-          </form>
 
-          <div className="my-6 text-center text-dark-text-light">Or</div>
+            {/* Footer */}
+            <p className="text-center text-slate-400 mt-6">
+              Don't have an account?{' '}
+              <Link href="/auth/register" className="text-cyan-400 hover:text-cyan-300 font-medium transition-colors duration-300">
+                Create account
+              </Link>
+            </p>
+          </div>
 
-          <button
-            onClick={handleGoogleLogin}
-            className="w-full flex items-center justify-center overflow-hidden rounded-full h-10 px-4 bg-red-600 text-white text-sm font-bold leading-normal hover:bg-red-700 transition-colors font-inter"
-          >
-            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google logo" className="h-5 w-5 mr-2" />
-            <span className="truncate">Sign in with Google</span>
-          </button>
-
-          <p className="text-center text-dark-text-light mt-6">
-            Don't have an account?{' '}
-            <Link href="/auth/register" className="text-blue-call-to-action hover:underline">
-              Register here
-            </Link>
-          </p>
-          <Link href="/auth/forgot-password" passHref>
-             <p className="text-center text-dark-text-light mt-2 text-sm font-normal leading-normal hover:underline cursor-pointer">Forgot password?</p>
-          </Link>
+          {/* Trust indicators */}
+          <div className="flex items-center justify-center gap-6 mt-8 text-slate-500 text-sm">
+            <div className="flex items-center gap-1">
+              <CheckCircle className="w-4 h-4" />
+              <span>Secure Login</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <CheckCircle className="w-4 h-4" />
+              <span>Protected</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <CheckCircle className="w-4 h-4" />
+              <span>Encrypted</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>

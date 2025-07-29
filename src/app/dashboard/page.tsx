@@ -1,11 +1,11 @@
 // src/app/dashboard/page.tsx
 'use client';
 
-import React, { useState, useEffect } from 'react'; // Import useEffect and useState
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation'; // Import useRouter for redirection
-import { getAuth, onAuthStateChanged } from 'firebase/auth'; // Import Firebase auth functions
-import Header from '../components/Header';
+import { useRouter } from 'next/navigation';
+import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import Header from '../components/Header'; // Import the main Header
 import { Home, FileText, ListOrdered, Settings, UserCheck } from 'lucide-react';
 
 // Helper component for resume cards
@@ -57,7 +57,6 @@ export default function DashboardPage() {
     return () => unsubscribe();
   }, [auth, router]);
 
-
   // Show a loading state or nothing while authentication status is being determined
   if (loadingAuth || !user) {
     return (
@@ -68,8 +67,8 @@ export default function DashboardPage() {
   }
 
   // Use dynamic user data for Header
-  const sampleUserName = user.displayName || user.email?.split('@')[0] || "User";
-  const sampleUserProfileImage = user.photoURL || 'https://images.unsplash.com/photo-1494790108377-be9c29b29329?q=80&w=1000&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'; // Fallback if photoURL is null
+  const currentUserName = user.displayName || user.email?.split('@')[0] || "User";
+  const currentUserProfileImage = user.photoURL || 'https://images.unsplash.com/photo-1494790108377-be9c29b29329?q=80&w=1000&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'; // Fallback if photoURL is null
 
   // This data would be fetched from Firebase Firestore for the logged-in user
   // For now, keeping sample data. You'd replace this with Firestore queries.
@@ -88,12 +87,19 @@ export default function DashboardPage() {
 
   return (
     <div className="relative flex size-full min-h-screen flex-col bg-dark-bg-main font-inter">
-      <Header userName={sampleUserName} userProfileImageUrl={sampleUserProfileImage} />
+      <Header userName={currentUserName} userProfileImageUrl={currentUserProfileImage} />
       <div className="gap-1 px-4 sm:px-6 lg:px-6 flex flex-1 justify-center py-5">
         <div className="layout-content-container flex flex-col w-80 lg:w-[280px] xl:w-[320px] bg-dark-bg-main p-4">
           <div className="flex h-full min-h-[700px] flex-col justify-between bg-dark-bg-main p-4">
             <div className="flex flex-col gap-4">
-              {/* Removed User Profile Info on Sidebar - now relies on Header for user info */}
+              {/* User Profile Info on Sidebar (now uses dynamic user data from Firebase Auth) */}
+              <div className="flex gap-3 items-center">
+                <div
+                  className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10"
+                  style={{ backgroundImage: `url("${currentUserProfileImage}")` }}
+                ></div>
+                <h1 className="text-white text-base font-medium leading-normal font-inter">{currentUserName}</h1>
+              </div>
               {/* Navigation Links */}
               <div className="flex flex-col gap-2">
                 <Link href="/dashboard" className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-dark-bg-card transition-colors">
@@ -112,20 +118,10 @@ export default function DashboardPage() {
                   <Settings className="text-white h-6 w-6" />
                   <p className="text-white text-sm font-medium leading-normal font-inter">Settings</p>
                 </Link>
-                {/* Removed Help Link from sidebar as well */}
               </div>
             </div>
-            {/* Added Login/Register Links at the bottom of the sidebar */}
-            <div className="flex flex-col gap-2 mt-auto">
-                <Link href="/auth/login" className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-dark-bg-card transition-colors">
-                    <UserCheck className="text-white h-6 w-6" />
-                    <p className="text-white text-sm font-medium leading-normal font-inter">Login</p>
-                </Link>
-                <Link href="/auth/register" className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-dark-bg-card transition-colors">
-                    <UserCheck className="text-white h-6 w-6" />
-                    <p className="text-white text-sm font-medium leading-normal font-inter">Register</p>
-                </Link>
-            </div>
+            {/* Login/Register Links removed from dashboard sidebar as user is already logged in */}
+            {/* If you want a logout button here, you'd add it similarly to the header's logout logic */}
           </div>
         </div>
 

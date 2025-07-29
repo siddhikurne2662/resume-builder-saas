@@ -3,68 +3,143 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import FloatingLabelInput from '../../components/FloatingLabelInput';
+import FloatingLabelInput from '../../components/FloatingLabelInput'; // Use the consolidated FloatingLabelInput
+import Header from '../../components/Header'; // Import the main Header
+import { User, Mail, Lock, CheckCircle, AlertCircle } from 'lucide-react'; // Needed for icons
+
 import { Toaster, toast } from 'react-hot-toast';
 import { getAuth, createUserWithEmailAndPassword, updateProfile, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
-import { doc, setDoc, getDoc } from 'firebase/firestore'; // Import getDoc for Google Auth check
-import { db } from '@/lib/firebase'; // Import initialized Firestore
+import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+
+// --- PasswordStrengthIndicator component ---
+const PasswordStrengthIndicator = ({ password }: { password: string }) => {
+  const getStrength = (pass : string) => {
+    let score = 0;
+    if (pass.length >= 8) score++;
+    if (pass.match(/[a-z]/)) score++;
+    if (pass.match(/[A-Z]/)) score++;
+    if (pass.match(/[0-9]/)) score++;
+    if (pass.match(/[^a-zA-Z0-9]/)) score++;
+    return score;
+  };
+
+  const strength = getStrength(password);
+  const strengthLabels = ['Very Weak', 'Weak', 'Fair', 'Good', 'Strong'];
+  const strengthColors = ['bg-red-500', 'bg-orange-500', 'bg-yellow-500', 'bg-blue-500', 'bg-green-500'];
+
+  if (!password) return null;
+
+  return (
+    <div className="mt-2">
+      <div className="flex space-x-1 mb-1">
+        {[...Array(5)].map((_, i) => (
+          <div
+            key={i}
+            className={`h-1 flex-1 rounded-full transition-all duration-300 ${
+              i < strength ? strengthColors[strength - 1] : 'bg-slate-700'
+            }`}
+          />
+        ))}
+      </div>
+      <p className={`text-xs ${strengthColors[strength - 1]?.replace('bg-', 'text-')}`}>
+        {strengthLabels[strength - 1]}
+      </p>
+    </div>
+  );
+};
+// --- End PasswordStrengthIndicator component ---
+
 
 export default function RegisterPage() {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    confirmPassword: ''
+  });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isLoading, setIsLoading] = useState(false);
+
   const auth = getAuth();
+
+  const handleInputChange = (field: keyof typeof formData) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setFormData(prev => ({ ...prev, [field]: e.target.value }));
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: '' }));
+    }
+  };
+
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+
+    if (!formData.name.trim()) newErrors.name = 'Full name is required';
+    if (!formData.email.trim()) newErrors.email = 'Email is required';
+    else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = 'Invalid email format';
+
+    if (!formData.password) newErrors.password = 'Password is required';
+    else if (formData.password.length < 6) newErrors.password = 'Password must be at least 6 characters';
+
+    if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = 'Passwords do not match';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password !== confirmPassword) {
-      toast.error("Passwords do not match!");
-      return;
-    }
-    // Firebase requires password to be at least 6 characters
-    if (password.length < 6) {
-        toast.error("Password must be at least 6 characters long.");
+    if (!validateForm()) {
+        toast.error("Please correct the errors in the form.");
         return;
     }
 
+    setIsLoading(true);
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
       const user = userCredential.user;
 
-      // Update user profile (display name)
       if (user) {
-        await updateProfile(user, { displayName: name });
-        // Also save user data to Firestore
+        await updateProfile(user, { displayName: formData.name });
         await setDoc(doc(db, 'users', user.uid), {
           uid: user.uid,
-          name: name,
-          email: email,
+          name: formData.name,
+          email: formData.email,
           createdAt: new Date().toISOString(),
           preferences: {
             theme: 'dark',
             notifications: true,
             autoSave: true,
           }
-        }, { merge: true }); // Use merge to not overwrite existing data if any
+        }, { merge: true });
       }
 
-      toast.success('Registration successful! You can now log in.');
-      // Redirect to login page or dashboard
+      toast.success('Registration successful! Redirecting...');
       window.location.href = '/dashboard';
     } catch (error: any) {
       console.error('Registration error:', error);
-      toast.error(`Registration failed: ${error.message}`);
+      let errorMessage = "Registration failed. Please try again.";
+      if (error.code === 'auth/email-already-in-use') {
+        errorMessage = "This email is already in use.";
+      } else if (error.code === 'auth/invalid-email') {
+        errorMessage = "The email address is not valid.";
+      } else if (error.code === 'auth/weak-password') {
+        errorMessage = "Password is too weak. Please use a stronger password.";
+      }
+      toast.error(errorMessage);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleGoogleRegister = async () => {
+    setIsLoading(true);
     const provider = new GoogleAuthProvider();
     try {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
 
-      // Check if user already exists in Firestore, if not, create a basic entry
       const userDocRef = doc(db, 'users', user.uid);
       const docSnap = await getDoc(userDocRef);
       if (!docSnap.exists()) {
@@ -82,111 +157,196 @@ export default function RegisterPage() {
         }, { merge: true });
       }
 
-      toast.success('Registered and logged in with Google successfully!');
+      toast.success('Registered and logged in with Google successfully! Redirecting...');
       window.location.href = '/dashboard';
     } catch (error: any) {
       console.error('Google registration error:', error);
-      toast.error(`Google registration failed: ${error.message}`);
+      let errorMessage = "Google registration failed. Please try again.";
+      if (error.code === 'auth/popup-closed-by-user') {
+        errorMessage = "Google sign-in popup was closed.";
+      } else if (error.code === 'auth/cancelled-popup-request') {
+        errorMessage = "Another popup was opened, please try again.";
+      } else if (error.code === 'auth/auth-domain-config-error' || error.code === 'auth/configuration-not-found') {
+        errorMessage = "Firebase Auth domain not configured. Check Firebase Console settings.";
+      }
+      toast.error(errorMessage);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <div className="relative flex size-full min-h-screen flex-col bg-dark-bg-main dark group/design-root overflow-x-hidden justify-center items-center" style={{ fontFamily: 'var(--font-inter), "Noto Sans", sans-serif' }}>
+    <div className="relative flex size-full min-h-screen flex-col bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 overflow-hidden">
       <Toaster position="bottom-right" reverseOrder={false} />
-      {/* Header taken from Stitch HTML for Auth pages */}
-      <header className="flex items-center justify-between whitespace-nowrap border-b border-solid border-b-[#243647] px-10 py-3 w-full absolute top-0">
-        <div className="flex items-center gap-4 text-white">
-          <div className="size-4">
-            {/* SVG Logo for ResumeCraft */}
-            <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <g clipPath="url(#clip0_6_535)">
-                <path fillRule="evenodd" clipRule="evenodd" d="M47.2426 24L24 47.2426L0.757355 24L24 0.757355L47.2426 24ZM12.2426 21H35.7574L24 9.24264L12.2426 21Z" fill="currentColor"></path>
-              </g>
-              <defs>
-                <clipPath id="clip0_6_535"><rect width="48" height="48" fill="white"></rect></clipPath>
-              </defs>
-            </svg>
-          </div>
-          <h2 className="text-white text-lg font-bold leading-tight tracking-[-0.015em]">ResumeCraft</h2>
-        </div>
-        <div className="flex flex-1 justify-end gap-8">
-          <div className="flex items-center gap-9">
-            <Link href="#" className="text-white text-sm font-medium leading-normal">Templates</Link>
-            <Link href="#" className="text-white text-sm font-medium leading-normal">Examples</Link>
-            <Link href="#" className="text-white text-sm font-medium leading-normal">Pricing</Link>
-          </div>
-          <Link href="/auth/login" passHref>
-            <button className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-10 px-4 bg-[#243647] text-white text-sm font-bold leading-normal tracking-[0.015em]">
-              <span className="truncate">Log In</span>
-            </button>
-          </Link>
-        </div>
-      </header>
 
-      <div className="px-40 flex flex-1 justify-center py-5 w-full items-center"> {/* Centering container */}
-        <div className="layout-content-container flex flex-col w-[512px] max-w-[512px] py-5 flex-1 bg-dark-bg-card p-8 rounded-xl shadow-lg border border-dark-border-medium mx-auto"> {/* Added mx-auto */}
-          <h2 className="text-white text-3xl font-bold text-center mb-6 font-outfit">Register for ResumeCraft</h2>
-          <form onSubmit={handleRegister} className="space-y-5">
-            <FloatingLabelInput
-              id="name"
-              label="Full Name"
-              type="text"
-              name="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-            />
-            <FloatingLabelInput
-              id="email"
-              label="Email"
-              type="email"
-              name="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-            <FloatingLabelInput
-              id="password"
-              label="Password"
-              type="password"
-              name="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-            <FloatingLabelInput
-              id="confirm-password"
-              label="Confirm Password"
-              type="password"
-              name="confirmPassword"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-            />
+      {/* Animated background elements */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-purple-500/5 rounded-full blur-3xl animate-pulse delay-500"></div>
+      </div>
+
+      {/* Main Header */}
+      <Header userName={undefined} userProfileImageUrl={undefined} /> {/* Pass undefined as no user is logged in yet */}
+
+      {/* Main Content (centered) */}
+      <div className="flex-grow flex items-center justify-center p-6">
+        <div className="w-full max-w-md">
+          {/* Card */}
+          <div className="bg-slate-800/30 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-8 shadow-2xl">
+            {/* Header */}
+            <div className="text-center mb-8">
+              <h2 className="text-3xl font-bold text-white mb-2">Create Account</h2>
+              <p className="text-slate-400">Join ResumeCraft and build your perfect resume</p>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleRegister} className="space-y-6">
+              <div>
+                <FloatingLabelInput
+                  id="name"
+                  label="Full Name"
+                  type="text"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleInputChange('name')}
+                  required
+                  icon={User}
+                />
+                {errors.name && (
+                  <p className="mt-2 text-sm text-red-400 flex items-center gap-1">
+                    <AlertCircle className="w-4 h-4" />
+                    {errors.name}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <FloatingLabelInput
+                  id="email"
+                  label="Email Address"
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleInputChange('email')}
+                  required
+                  icon={Mail}
+                />
+                {errors.email && (
+                  <p className="mt-2 text-sm text-red-400 flex items-center gap-1">
+                    <AlertCircle className="w-4 h-4" />
+                    {errors.email}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <FloatingLabelInput
+                  id="password"
+                  label="Password"
+                  type="password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleInputChange('password')}
+                  required
+                  icon={Lock}
+                />
+                <PasswordStrengthIndicator password={formData.password} />
+                {errors.password && (
+                  <p className="mt-2 text-sm text-red-400 flex items-center gap-1">
+                    <AlertCircle className="w-4 h-4" />
+                    {errors.password}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <FloatingLabelInput
+                  id="confirm-password"
+                  label="Confirm Password"
+                  type="password"
+                  name="confirmPassword"
+                  value={formData.confirmPassword}
+                  onChange={handleInputChange('confirmPassword')}
+                  required
+                  icon={Lock}
+                />
+                {errors.confirmPassword && (
+                  <p className="mt-2 text-sm text-red-400 flex items-center gap-1">
+                    <AlertCircle className="w-4 h-4" />
+                    {errors.confirmPassword}
+                  </p>
+                )}
+                {formData.confirmPassword && formData.password === formData.confirmPassword && !errors.confirmPassword && (
+                  <p className="mt-2 text-sm text-green-400 flex items-center gap-1">
+                    <CheckCircle className="w-4 h-4" />
+                    Passwords match
+                  </p>
+                )}
+              </div>
+
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full py-4 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-semibold rounded-xl transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg hover:shadow-cyan-500/25 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              >
+                {isLoading ? (
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    Creating Account...
+                  </div>
+                ) : (
+                  'Create Account'
+                )}
+              </button>
+            </form>
+
+            {/* Divider */}
+            <div className="flex items-center my-6">
+              <div className="flex-1 h-px bg-slate-700"></div>
+              <span className="px-4 text-slate-400 text-sm">or</span>
+              <div className="flex-1 h-px bg-slate-700"></div>
+            </div>
+
+            {/* Google Sign Up */}
             <button
-              type="submit"
-              className="w-full flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-10 px-4 bg-blue-call-to-action text-white text-sm font-bold leading-normal tracking-[0.015em] hover:bg-blue-button-hover transition-colors font-inter"
+              onClick={handleGoogleRegister}
+              disabled={isLoading}
+              className="w-full py-4 bg-white hover:bg-gray-50 text-gray-900 font-semibold rounded-xl transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
             >
-              <span className="truncate">Register</span>
+              <svg className="w-5 h-5" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+              </svg>
+              Continue with Google
             </button>
-          </form>
 
-          <div className="my-6 text-center text-dark-text-light">Or</div>
+            {/* Footer */}
+            <p className="text-center text-slate-400 mt-6">
+              Already have an account?{' '}
+              <Link href="/auth/login" className="text-cyan-400 hover:text-cyan-300 font-medium transition-colors duration-300">
+                Sign in here
+              </Link>
+            </p>
+          </div>
 
-          <button
-            onClick={handleGoogleRegister}
-            className="w-full flex items-center justify-center overflow-hidden rounded-full h-10 px-4 bg-red-600 text-white text-sm font-bold leading-normal hover:bg-red-700 transition-colors font-inter"
-          >
-            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google logo" className="h-5 w-5 mr-2" />
-            <span className="truncate">Sign up with Google</span>
-          </button>
-
-          <p className="text-center text-dark-text-light mt-6">
-            Already have an account?{' '}
-            <Link href="/auth/login" className="text-blue-call-to-action hover:underline">
-              Login here
-            </Link>
-          </p>
+          {/* Trust indicators */}
+          <div className="flex items-center justify-center gap-6 mt-8 text-slate-500 text-sm">
+            <div className="flex items-center gap-1">
+              <CheckCircle className="w-4 h-4" />
+              <span>Secure</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <CheckCircle className="w-4 h-4" />
+              <span>Fast Setup</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <CheckCircle className="w-4 h-4" />
+              <span>Free Forever</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>

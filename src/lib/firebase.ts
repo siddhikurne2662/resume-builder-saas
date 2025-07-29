@@ -1,7 +1,7 @@
 // src/lib/firebase.ts
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore'; // Import Firestore
+import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -13,11 +13,12 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
+// Add this line to debug:
+console.log("Firebase Config during initialization:", firebaseConfig);
+
 // Initialize Firebase
-// This check prevents re-initialization on hot-reloads in Next.js dev mode
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
 // Export Firebase services
 export const auth = getAuth(app);
-export const db = getFirestore(app); // Export Firestore instance
-// export const storage = getStorage(app); // Uncomment for Storage
+export const db = getFirestore(app);
