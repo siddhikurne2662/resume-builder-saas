@@ -1,11 +1,13 @@
 // src/app/components/ResumeEditor.tsx
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Plus, Minus, User, Briefcase, GraduationCap, Sparkles, Award } from 'lucide-react';
 import { ResumeData } from '@/types/resume';
 import FloatingLabelInput from './FloatingLabelInput';
 import EditorSection from './EditorSection';
+import { generateAiContent } from '@/lib/aiService'; // Import AI service
+import { toast } from 'react-hot-toast';
 
 interface ResumeEditorProps {
   resumeData: ResumeData;
@@ -19,6 +21,10 @@ export default function ResumeEditor({
   completionPercentage,
 }: ResumeEditorProps) {
   const { personalInfo, summary, experience, education, skills } = resumeData;
+  const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
+  const [isGeneratingExperience, setIsGeneratingExperience] = useState<string | null>(null); // To track which experience item
+  const [isGeneratingSkills, setIsGeneratingSkills] = useState(false);
+
 
   const handlePersonalInfoChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -42,6 +48,32 @@ export default function ResumeEditor({
     }));
   };
 
+  // NEW: AI Suggest for Summary
+  const handleAiSuggestSummary = async () => {
+    setIsGeneratingSummary(true);
+    try {
+      const suggestedSummary = await generateAiContent({
+        sectionType: 'summary',
+        jobTitle: resumeData.experience[0]?.title || 'Tech Student', // Use first experience title or default
+        experienceLevel: resumeData.experience.length > 0 ? 'experienced' : 'entry-level',
+        context: resumeData.summary, // Provide existing summary as context
+        techSkills: [...resumeData.skills.frontend, ...resumeData.skills.tools, ...resumeData.skills.other],
+      });
+      if (typeof suggestedSummary === 'string') {
+        setResumeData(prevData => ({ ...prevData, summary: suggestedSummary }));
+        toast.success('AI suggested summary!');
+      } else {
+        toast.error('AI could not generate summary.');
+      }
+    } catch (error) {
+      console.error('Error generating summary:', error);
+      toast.error('Failed to generate summary with AI.');
+    } finally {
+      setIsGeneratingSummary(false);
+    }
+  };
+
+
   const handleArrayItemChange = (
     section: 'experience' | 'education',
     id: string,
@@ -61,6 +93,37 @@ export default function ResumeEditor({
       }),
     }));
   };
+
+  // NEW: AI Suggest for Experience Description
+  const handleAiSuggestExperienceDescription = async (expId: string, currentDescription: string[]) => {
+    setIsGeneratingExperience(expId);
+    try {
+      const currentExp = resumeData.experience.find(exp => exp.id === expId);
+      if (!currentExp) {
+        toast.error('Experience item not found.');
+        return;
+      }
+      const suggestedDescription = await generateAiContent({
+        sectionType: 'experience',
+        context: currentDescription.join('\n'),
+        jobTitle: currentExp.title,
+        companyName: currentExp.company, // Changed 'company' to 'companyName'
+        techSkills: [...resumeData.skills.frontend, ...resumeData.skills.tools, ...resumeData.skills.other],
+      });
+      if (typeof suggestedDescription === 'string') {
+        handleArrayItemChange('experience', expId, 'description', suggestedDescription);
+        toast.success('AI suggested experience points!');
+      } else {
+        toast.error('AI could not generate experience points.');
+      }
+    } catch (error) {
+      console.error('Error generating experience:', error);
+      toast.error('Failed to generate experience with AI.');
+    } finally {
+      setIsGeneratingExperience(null);
+    }
+  };
+
 
   const addArrayItem = (section: 'experience' | 'education') => {
     const newItemId = `${section}-${Date.now()}`;
@@ -100,15 +163,43 @@ export default function ResumeEditor({
     }));
   };
 
+  // NEW: AI Suggest for Skills
+  const handleAiSuggestSkills = async (category: keyof ResumeData['skills']) => {
+    setIsGeneratingSkills(true);
+    try {
+      const suggestedSkills = await generateAiContent({
+        sectionType: 'skill',
+        jobTitle: resumeData.experience[0]?.title || 'Software Engineer',
+        experienceLevel: resumeData.experience.length > 0 ? 'experienced' : 'entry-level',
+        techSkills: resumeData.skills[category], // Provide existing skills as context
+      });
+      if (typeof suggestedSkills === 'string') {
+        handleSkillsChange(category, suggestedSkills);
+        toast.success('AI suggested skills!');
+      } else {
+        toast.error('AI could not generate skills.');
+      }
+    } catch (error) {
+      console.error('Error generating skills:', error);
+      toast.error('Failed to generate skills with AI.');
+    } finally {
+      setIsGeneratingSkills(false);
+    }
+  };
+
+
   const handleSaveChanges = () => {
-    console.log('Saving changes:', resumeData);
+    // This function will now be handled by the parent BuilderPage component
+    // It's still here as a placeholder for completeness, but the actual save logic
+    // is triggered by the button in BuilderPage's sticky footer.
+    console.log('Save triggered from ResumeEditor, but handled by parent.');
   };
 
   return (
     <div className="relative h-full pb-20">
       <div className="space-y-6">
         {/* Personal Info Section */}
-        <EditorSection title="Contact Information" icon={User}> {/* Updated title based on provided HTML */}
+        <EditorSection title="Contact Information" icon={User}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FloatingLabelInput id="name" name="name" label="Full Name" type="text" value={personalInfo.name} onChange={handlePersonalInfoChange} />
             <FloatingLabelInput id="email" name="email" label="Email" type="email" value={personalInfo.email} onChange={handlePersonalInfoChange} />
@@ -120,7 +211,7 @@ export default function ResumeEditor({
         </EditorSection>
 
         {/* Summary Section */}
-        <EditorSection title="Summary" icon={Award}> {/* Updated title */}
+        <EditorSection title="Summary" icon={Award}>
           <FloatingLabelInput
             id="summary"
             name="summary"
@@ -130,12 +221,28 @@ export default function ResumeEditor({
             isTextArea
             rows={5}
           />
+          <button
+            onClick={handleAiSuggestSummary}
+            disabled={isGeneratingSummary}
+            className="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-8 px-4 bg-dark-bg-card text-white text-sm font-medium leading-normal hover:bg-dark-border-light transition-colors font-inter mt-3 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isGeneratingSummary ? (
+              <div className="flex items-center justify-center gap-1">
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                Generating...
+              </div>
+            ) : (
+              <>
+                <Sparkles className="mr-2 h-4 w-4" /> AI Suggest
+              </>
+            )}
+          </button>
         </EditorSection>
 
         {/* Experience Section */}
         <EditorSection title="Work Experience" icon={Briefcase}>
           {experience.map((exp, index) => (
-            <div key={exp.id} className="border border-dark-border-light p-4 rounded-lg mb-4 bg-dark-bg-medium shadow-sm relative group hover-lift transition-all-fast"> {/* Used new custom colors */}
+            <div key={exp.id} className="border border-dark-border-light p-4 rounded-lg mb-4 bg-dark-bg-medium shadow-sm relative group hover-lift transition-all-fast">
               <h4 className="text-lg font-outfit font-semibold text-white mb-3">Experience {index + 1}</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <FloatingLabelInput id={`exp-title-${exp.id}`} label="Job Title" type="text" value={exp.title} onChange={(e) => handleArrayItemChange('experience', exp.id, 'title', e.target.value)} />
@@ -151,6 +258,22 @@ export default function ResumeEditor({
                 isTextArea
                 rows={4}
               />
+              <button
+                onClick={() => handleAiSuggestExperienceDescription(exp.id, exp.description)}
+                disabled={isGeneratingExperience === exp.id}
+                className="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-8 px-4 bg-dark-bg-card text-white text-sm font-medium leading-normal hover:bg-dark-border-light transition-colors font-inter mt-3 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isGeneratingExperience === exp.id ? (
+                  <div className="flex items-center justify-center gap-1">
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    Generating...
+                  </div>
+                ) : (
+                  <>
+                    <Sparkles className="mr-2 h-4 w-4" /> AI Suggest
+                  </>
+                )}
+              </button>
               <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                 <button
                   onClick={() => removeArrayItem('experience', exp.id)}
@@ -162,7 +285,7 @@ export default function ResumeEditor({
               </div>
             </div>
           ))}
-          <button onClick={() => addArrayItem('experience')} className="btn-secondary !bg-dark-bg-card hover:!bg-dark-border-light !text-white mt-4 flex items-center rounded-full px-4 h-10"> {/* Adapted styling */}
+          <button onClick={() => addArrayItem('experience')} className="btn-secondary !bg-dark-bg-card hover:!bg-dark-border-light !text-white mt-4 flex items-center rounded-full px-4 h-10">
             <Plus className="mr-2 h-5 w-5" /> Add New Experience
           </button>
         </EditorSection>
@@ -170,7 +293,7 @@ export default function ResumeEditor({
         {/* Education Section */}
         <EditorSection title="Education" icon={GraduationCap}>
           {education.map((edu, index) => (
-            <div key={edu.id} className="border border-dark-border-light p-4 rounded-lg mb-4 bg-dark-bg-medium shadow-sm relative group hover-lift transition-all-fast"> {/* Used new custom colors */}
+            <div key={edu.id} className="border border-dark-border-light p-4 rounded-lg mb-4 bg-dark-bg-medium shadow-sm relative group hover-lift transition-all-fast">
               <h4 className="text-lg font-outfit font-semibold text-white mb-3">Education {index + 1}</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <FloatingLabelInput id={`edu-degree-${edu.id}`} label="Degree/Field of Study" type="text" value={edu.degree} onChange={(e) => handleArrayItemChange('education', edu.id, 'degree', e.target.value)} />
@@ -208,6 +331,13 @@ export default function ResumeEditor({
                 isTextArea
                 rows={3}
               />
+              <button
+                onClick={() => handleAiSuggestSkills('frontend')}
+                disabled={isGeneratingSkills}
+                className="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-8 px-4 bg-dark-bg-card text-white text-sm font-medium leading-normal hover:bg-dark-border-light transition-colors font-inter mt-3 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isGeneratingSkills ? 'Generating...' : 'AI Suggest'}
+              </button>
             </div>
             <div>
               <FloatingLabelInput
@@ -218,6 +348,13 @@ export default function ResumeEditor({
                 isTextArea
                 rows={3}
               />
+              <button
+                onClick={() => handleAiSuggestSkills('tools')}
+                disabled={isGeneratingSkills}
+                className="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-8 px-4 bg-dark-bg-card text-white text-sm font-medium leading-normal hover:bg-dark-border-light transition-colors font-inter mt-3 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isGeneratingSkills ? 'Generating...' : 'AI Suggest'}
+              </button>
             </div>
             <div>
               <FloatingLabelInput
@@ -228,14 +365,21 @@ export default function ResumeEditor({
                 isTextArea
                 rows={3}
               />
+              <button
+                onClick={() => handleAiSuggestSkills('other')}
+                disabled={isGeneratingSkills}
+                className="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-8 px-4 bg-dark-bg-card text-white text-sm font-medium leading-normal hover:bg-dark-border-light transition-colors font-inter mt-3 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isGeneratingSkills ? 'Generating...' : 'AI Suggest'}
+              </button>
             </div>
           </div>
         </EditorSection>
 
         {/* Progress Indicator */}
-        <div className="section-card p-4 bg-dark-bg-card border border-dark-border-light"> {/* Used new custom colors */}
+        <div className="section-card p-4 bg-dark-bg-card border border-dark-border-light">
           <h3 className="text-xl font-outfit font-semibold text-white mb-4">Resume Completion</h3>
-          <div className="w-full bg-dark-border-light rounded-full h-3"> {/* Used new custom colors */}
+          <div className="w-full bg-dark-border-light rounded-full h-3">
             <div
               className="bg-light-button-accent h-3 rounded-full transition-all duration-500 ease-out"
               style={{ width: `${completionPercentage}%` }}
@@ -246,12 +390,12 @@ export default function ResumeEditor({
 
       </div>
 
-      {/* Sticky Save Changes Button */}
-      <div className="sticky-bottom-bar bg-dark-bg-medium border-t border-dark-border-light p-4 shadow-lg flex justify-end"> {/* Updated colors */}
+      {/* Sticky Save Changes Button - Removed from here to parent BuilderPage */}
+      {/* <div className="sticky-bottom-bar bg-dark-bg-medium border-t border-dark-border-light p-4 shadow-lg flex justify-end">
         <button onClick={handleSaveChanges} className="bg-blue-call-to-action text-white hover:bg-blue-button-hover font-bold px-4 py-2 rounded-full transition-colors font-inter">
           Save Changes
         </button>
-      </div>
+      </div> */}
     </div>
   );
 }

@@ -1,9 +1,12 @@
 // src/app/components/Header.tsx
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Download, LayoutTemplate, User, Menu, X, ZoomIn, ZoomOut, UserCheck, Settings } from 'lucide-react';
+import { Download, LayoutTemplate, User, Menu, X, ZoomIn, ZoomOut, UserCheck, Settings } from 'lucide-react'; // Removed DownloadIcon from heroicons
+import { getAuth, signOut, type Auth } from 'firebase/auth';
+import { toast } from 'react-hot-toast';
+import { app } from '@/lib/firebase';
 
 interface HeaderProps {
   onDownloadPdf?: () => void;
@@ -14,7 +17,7 @@ interface HeaderProps {
   activeTemplate?: string;
   showBuilderActions?: boolean;
   userProfileImageUrl?: string;
-  userName?: string; // NEW PROP: User's full name for the initial
+  userName?: string;
 }
 
 export default function Header({
@@ -25,17 +28,31 @@ export default function Header({
   isMobileSidebarOpen,
   activeTemplate,
   showBuilderActions = false,
-  userProfileImageUrl, // No default here, rely on conditional rendering
-  userName = 'User', // Default name if none provided
+  userProfileImageUrl,
+  userName = 'User',
 }: HeaderProps) {
   const [isTemplateDropdownOpen, setIsTemplateDropdownOpen] = useState(false);
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
   const [currentZoom, setCurrentZoom] = useState(100);
+  const [authInstance, setAuthInstance] = useState<Auth | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        setAuthInstance(getAuth(app));
+      } catch (e) {
+        console.error("Error initializing Firebase Auth in Header:", e);
+      }
+    }
+  }, []);
 
   const templates = [
     { name: 'Modern Minimal', value: 'modern-minimal' },
     { name: 'Classic Professional', value: 'classic-pro' },
     { name: 'Creative Bold', value: 'creative-bold' },
+    { name: 'LinkedIn Modern', value: 'linkedin-modern' },
+    { name: 'LinkedIn Professional', value: 'linkedin-professional' },
+    { name: 'LinkedIn Minimal', value: 'linkedin-minimal' },
   ];
 
   const handleZoomIn = () => {
@@ -53,56 +70,52 @@ export default function Header({
     onZoomChange && onZoomChange(1);
   };
 
-  const handleLogout = () => {
-    console.log("User logged out!");
-    // Firebase logout would go here:
-    // import { getAuth, signOut } from 'firebase/auth';
-    // const auth = getAuth();
-    // signOut(auth).then(() => {
-    //   // Sign-out successful. Redirect to login or home.
-    //   console.log("User signed out");
-    // }).catch((error) => {
-    //   // An error happened.
-    //   console.error("Sign out error:", error);
-    // });
+  const handleLogout = async () => {
+    if (!authInstance) {
+      toast.error("Authentication not initialized.");
+      return;
+    }
+    try {
+      await signOut(authInstance);
+      toast.success("Logged out successfully!");
+      window.location.href = '/auth/login';
+    } catch (error: any) {
+      console.error("Sign out error:", error);
+      toast.error(`Logout failed: ${error.message}`);
+    }
   };
 
-  const userInitial = userName.charAt(0).toUpperCase(); // Get the first letter of the name
+  const userInitial = userName.charAt(0).toUpperCase();
 
   return (
     <header className="bg-dark-bg-main border-b border-dark-border-medium text-white px-6 py-3 sm:px-10 z-50 sticky top-0">
       <div className="container mx-auto flex justify-between items-center">
-        {/* Logo and App Name */}
         <h1 className="text-2xl font-outfit font-semibold">
           <Link href="/" className="hover:opacity-80 transition-opacity">
             ResumeCraft
           </Link>
         </h1>
 
-        {/* Desktop Navigation / Actions */}
         <nav className="hidden md:flex items-center gap-8">
-          {/* Main Navigation Links */}
           <div className="flex items-center gap-6 lg:gap-9">
             <Link href="/dashboard" className="text-white text-sm font-medium hover:text-dark-text-light transition-colors font-inter">
               Dashboard
             </Link>
-            <Link href="/builder" className="text-white text-sm font-medium hover:text-dark-text-light transition-colors font-inter">
-              My Resumes
-            </Link>
-            <Link href="#" className="text-white text-sm font-medium hover:text-dark-text-light transition-colors font-inter">
+            <Link href="/templates" className="text-white text-sm font-medium hover:text-dark-text-light transition-colors font-inter">
               Templates
             </Link>
             <Link href="/settings" className="text-white text-sm font-medium hover:text-dark-text-light transition-colors font-inter">
               Settings
             </Link>
-            {/* Removed Help Link */}
           </div>
 
-          {/* Builder-specific actions or global actions */}
           <div className="flex items-center gap-2">
+            {/* THIS IS THE DOWNLOAD BUTTON YOU WANT TO KEEP FOR THE BUILDER PAGE */}
+            {/* The one you were seeing twice was likely an older version of this,
+                or a general 'Download' button intended for other pages.
+                Ensure there's no other direct <button>Download</button> in the Header outside this block. */}
             {showBuilderActions && (
               <>
-                {/* Template Selector Dropdown */}
                 <div className="relative">
                   <button
                     onClick={() => setIsTemplateDropdownOpen(!isTemplateDropdownOpen)}
@@ -129,7 +142,6 @@ export default function Header({
                   )}
                 </div>
 
-                {/* Zoom Controls */}
                 <div className="flex items-center space-x-1 bg-dark-bg-card rounded-md p-1 text-light-button-accent">
                   <button onClick={handleZoomOut} className="p-1 rounded-md hover:bg-dark-border-light transition-all focus:outline-none focus:ring-2 focus:ring-dark-text-blue">
                     <ZoomOut className="h-4 w-4" />
@@ -143,7 +155,7 @@ export default function Header({
                   </button>
                 </div>
 
-                {/* Download Button */}
+                {/* This is the intended Download button in the builder context */}
                 <button
                   onClick={onDownloadPdf}
                   className="bg-blue-call-to-action text-white hover:bg-blue-button-hover font-bold px-4 py-2 rounded-full transition-colors flex items-center font-inter"
@@ -153,21 +165,19 @@ export default function Header({
                 </button>
               </>
             )}
+            {/* Check here: Is there another <button>Download</button> outside the showBuilderActions block? If so, remove it. */}
 
-            {/* Removed Upgrade Button */}
-
-            {/* User Avatar/Profile - UPDATED WITH CONDITIONAL IMAGE/INITIAL */}
             <div className="relative">
               <button
                 onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
                 className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg focus:outline-none focus:ring-2 focus:ring-dark-text-blue transition-all ${
                   userProfileImageUrl
                     ? 'bg-cover bg-center bg-no-repeat'
-                    : 'bg-light-button-accent text-dark-bg-main' // Fallback colors for initial
+                    : 'bg-light-button-accent text-dark-bg-main'
                 }`}
-                style={userProfileImageUrl ? { backgroundImage: `url("${userProfileImageUrl}")` } : {}} // Apply image if exists
+                style={userProfileImageUrl ? { backgroundImage: `url("${userProfileImageUrl}")` } : {}}
               >
-                {!userProfileImageUrl && userInitial} {/* Show initial only if no image */}
+                {!userProfileImageUrl && userInitial}
               </button>
               {isUserDropdownOpen && (
                 <div className="absolute right-0 mt-2 w-48 bg-white text-dark-bg-main rounded-md shadow-lg py-1 z-10">
@@ -186,7 +196,6 @@ export default function Header({
           </div>
         </nav>
 
-        {/* Mobile Menu Button */}
         <div className="md:hidden">
           <button
             onClick={() => onToggleMobileSidebar && onToggleMobileSidebar()}

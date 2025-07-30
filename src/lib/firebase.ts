@@ -14,10 +14,10 @@ const firebaseConfig = {
 };
 
 // Add this line to debug:
-console.log("Firebase Config during initialization:", firebaseConfig);
+// console.log("Firebase Config during initialization:", firebaseConfig); // Keep commented out for production
 
-// Initialize Firebase
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+// Initialize Firebase and EXPORT THE APP INSTANCE
+export const app = !getApps().length ? initializeApp(firebaseConfig) : getApp(); // Added 'export' to 'app'
 
 // Export Firebase services
 export const auth = getAuth(app);

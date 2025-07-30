@@ -12,20 +12,97 @@ interface ResumePreviewProps {
 export default function ResumePreview({ resumeData, zoomLevel = 1, activeTemplate = 'modern-minimal' }: ResumePreviewProps) {
   const { personalInfo, summary, experience, education, skills } = resumeData;
 
-  const templateClasses: { [key: string]: string } = {
-    'modern-minimal': 'p-8',
-    'classic-pro': 'p-10 font-serif',
-    'creative-bold': 'p-6 bg-blue-50',
+  // Define comprehensive ATS-friendly styles for each template
+  const templateStyles: { [key: string]: React.CSSProperties } = {
+    'modern-minimal': {
+      // Your existing modern-minimal styles
+      padding: '2.5rem',
+      fontFamily: 'var(--font-inter), sans-serif',
+      color: '#1f2937',
+      border: '1px solid #e5e7eb',
+      boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+    },
+    'classic-pro': {
+      // Your existing classic-pro styles
+      padding: '2rem',
+      fontFamily: 'Georgia, serif',
+      color: '#374151',
+      border: '1px solid #d1d5db',
+      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+    },
+    'creative-bold': {
+      // Your existing creative-bold styles
+      padding: '2rem',
+      fontFamily: 'var(--font-outfit), sans-serif',
+      color: '#1f2937',
+      border: '1px solid #bfdbfe',
+      boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+      backgroundColor: '#f8fafc',
+    },
+    // NEW TEMPLATES BASED ON LINKEDIN IMAGES
+    'linkedin-modern': { // Based on image_e04261.png
+      padding: '2rem 3rem', // More horizontal padding
+      fontFamily: 'Arial, sans-serif', // Common sans-serif, highly ATS-friendly
+      color: '#333333',
+      border: 'none', // Appears borderless or subtle border in image
+      boxShadow: 'none', // Clean, flat look
+      backgroundColor: '#ffffff',
+      lineHeight: '1.4',
+    },
+    'linkedin-professional': { // Based on image_e04299.png
+      padding: '2rem',
+      fontFamily: '"Times New Roman", serif', // Classic, slightly condensed look
+      color: '#222222',
+      border: '1px solid #eeeeee',
+      boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+      backgroundColor: '#ffffff',
+      lineHeight: '1.35', // Slightly more condensed
+    },
+    'linkedin-minimal': { // Based on image_e042bc.png
+      padding: '3rem', // Lots of white space
+      fontFamily: 'Verdana, sans-serif', // Clean, crisp sans-serif
+      color: '#444444',
+      border: 'none',
+      boxShadow: 'none',
+      backgroundColor: '#ffffff',
+      lineHeight: '1.5', // More breathing room
+    },
+  };
+
+  // Define section title classes based on template for visual distinction
+  const sectionTitleClasses: { [key: string]: string } = {
+    'modern-minimal': 'text-gray-800 border-blue-600',
+    'classic-pro': 'text-gray-700 border-gray-400 font-serif italic',
+    'creative-bold': 'text-blue-700 border-blue-400 font-outfit uppercase',
+    'linkedin-modern': 'text-blue-700 border-blue-700 font-bold tracking-wide uppercase text-lg', // Prominent blue heading
+    'linkedin-professional': 'text-gray-800 border-gray-500 font-bold text-xl', // Stronger, traditional heading
+    'linkedin-minimal': 'text-gray-700 border-gray-300 font-semibold text-lg', // Understated, clean heading
+  };
+
+  // Define header specific styles (like name color/font)
+  const headerNameClasses: { [key: string]: string } = {
+    'modern-minimal': 'text-blue-700 font-outfit font-extrabold',
+    'classic-pro': 'text-gray-800 font-serif font-extrabold',
+    'creative-bold': 'text-blue-700 font-outfit font-black',
+    'linkedin-modern': 'text-blue-800 font-bold', // Darker blue for name
+    'linkedin-professional': 'text-gray-900 font-bold', // Strong black for name
+    'linkedin-minimal': 'text-gray-800 font-bold', // Clean black for name
   };
 
   return (
     <div
-      className={`bg-white border border-gray-200 shadow-xl rounded-lg min-h-[A4] font-inter text-gray-700 transition-all duration-300 ease-in-out ${templateClasses[activeTemplate as keyof typeof templateClasses]}`}
-      style={{ transform: `scale(${zoomLevel})`, transformOrigin: 'top left' }}
+      className={`bg-white rounded-lg min-h-[A4] transition-all duration-300 ease-in-out`}
+      style={{
+        transform: `scale(${zoomLevel})`,
+        transformOrigin: 'top left',
+        ...templateStyles[activeTemplate as keyof typeof templateStyles],
+      }}
     >
       {/* Header - Personal Info */}
-      <header className="text-center mb-8 pb-5 border-b-2 border-blue-600">
-        <h1 className="text-5xl font-outfit font-extrabold text-blue-700 mb-2 leading-tight">{personalInfo.name}</h1>
+      <header className={`text-center mb-8 pb-5 border-b-2 ${sectionTitleClasses[activeTemplate as keyof typeof sectionTitleClasses]?.split(' ')[1]}`}>
+        <h1 className={`text-5xl mb-2 leading-tight ${headerNameClasses[activeTemplate as keyof typeof headerNameClasses]}`}>
+          {personalInfo.name}
+        </h1>
         <p className="text-lg text-gray-600 space-x-2">
           <span>{personalInfo.email}</span>
           <span>|</span>
@@ -54,7 +131,7 @@ export default function ResumePreview({ resumeData, zoomLevel = 1, activeTemplat
       {/* Summary */}
       {summary && (
         <section className="mb-8">
-          <SectionTitle>Summary</SectionTitle>
+          <SectionTitle className={sectionTitleClasses[activeTemplate as keyof typeof sectionTitleClasses]}>Summary</SectionTitle>
           <p className="text-gray-700 leading-relaxed text-base">{summary}</p>
         </section>
       )}
@@ -62,10 +139,10 @@ export default function ResumePreview({ resumeData, zoomLevel = 1, activeTemplat
       {/* Experience */}
       {experience.length > 0 && (
         <section className="mb-8">
-          <SectionTitle>Experience</SectionTitle>
+          <SectionTitle className={sectionTitleClasses[activeTemplate as keyof typeof sectionTitleClasses]}>Experience</SectionTitle>
           {experience.map((exp) => (
             <div key={exp.id} className="mb-5 last:mb-0 pb-3 border-b border-gray-200 last:border-b-0">
-              <h3 className="text-xl font-outfit font-semibold text-gray-800 mb-1">{exp.title}</h3>
+              <h3 className="text-xl font-semibold text-gray-800 mb-1">{exp.title}</h3>
               <p className="text-gray-600 italic text-sm mb-2">{exp.company} | {exp.startDate} - {exp.endDate}</p>
               <ul className="list-disc list-inside text-gray-700 mt-2 pl-4 space-y-1">
                 {exp.description.map((desc, idx) => (
@@ -80,10 +157,10 @@ export default function ResumePreview({ resumeData, zoomLevel = 1, activeTemplat
       {/* Education */}
       {education.length > 0 && (
         <section className="mb-8">
-          <SectionTitle>Education</SectionTitle>
+          <SectionTitle className={sectionTitleClasses[activeTemplate as keyof typeof sectionTitleClasses]}>Education</SectionTitle>
           {education.map((edu) => (
             <div key={edu.id} className="mb-5 last:mb-0 pb-3 border-b border-gray-200 last:border-b-0">
-              <h3 className="text-xl font-outfit font-semibold text-gray-800 mb-1">{edu.degree}</h3>
+              <h3 className="text-xl font-semibold text-gray-800 mb-1">{edu.degree}</h3>
               <p className="text-gray-600 italic text-sm mb-1">{edu.institution} | {edu.startDate} - {edu.endDate}</p>
               {edu.gpa && <p className="text-gray-700 text-sm">GPA: {edu.gpa}</p>}
             </div>
@@ -94,11 +171,11 @@ export default function ResumePreview({ resumeData, zoomLevel = 1, activeTemplat
       {/* Skills */}
       {skills && (
         <section>
-          <SectionTitle>Skills</SectionTitle>
+          <SectionTitle className={sectionTitleClasses[activeTemplate as keyof typeof sectionTitleClasses]}>Skills</SectionTitle>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-4 text-gray-700">
             {Object.entries(skills).map(([category, skillList]) => (
               <div key={category}>
-                <h3 className="font-outfit font-semibold text-blue-600 mb-2 capitalize">{category.replace(/([A-Z])/g, ' $1')}</h3>
+                <h3 className={`font-semibold text-blue-600 mb-2 capitalize ${activeTemplate === 'creative-bold' ? 'font-outfit' : ''}`}>{category.replace(/([A-Z])/g, ' $1')}</h3>
                 <ul className="list-disc list-inside text-sm space-y-1">
                   {skillList.map((skill, idx) => (
                     <li key={idx}>{skill}</li>

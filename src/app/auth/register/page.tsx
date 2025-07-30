@@ -3,9 +3,9 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import FloatingLabelInput from '../../components/FloatingLabelInput'; // Use the consolidated FloatingLabelInput
-import Header from '../../components/Header'; // Import the main Header
-import { User, Mail, Lock, CheckCircle, AlertCircle } from 'lucide-react'; // Needed for icons
+import FloatingLabelInput from '../../components/FloatingLabelInput';
+import Header from '../../components/Header';
+import { User, Mail, Lock, CheckCircle, AlertCircle } from 'lucide-react';
 
 import { Toaster, toast } from 'react-hot-toast';
 import { getAuth, createUserWithEmailAndPassword, updateProfile, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
@@ -179,29 +179,43 @@ export default function RegisterPage() {
     <div className="relative flex size-full min-h-screen flex-col bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 overflow-hidden">
       <Toaster position="bottom-right" reverseOrder={false} />
 
-      {/* Animated background elements */}
+      {/* Enhanced animated background elements */}
       <div className="absolute inset-0 overflow-hidden">
+        {/* Main background orbs */}
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl animate-pulse"></div>
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-purple-500/5 rounded-full blur-3xl animate-pulse delay-500"></div>
+
+        {/* Additional floating elements */}
+        <div className="absolute top-20 left-20 w-32 h-32 bg-gradient-to-r from-cyan-400/20 to-blue-400/20 rounded-full blur-2xl animate-bounce" style={{animationDuration: '3s'}}></div>
+        <div className="absolute bottom-32 right-32 w-24 h-24 bg-gradient-to-r from-purple-400/20 to-pink-400/20 rounded-full blur-2xl animate-bounce delay-1000" style={{animationDuration: '4s'}}></div>
+        <div className="absolute top-1/3 right-1/4 w-16 h-16 bg-gradient-to-r from-emerald-400/20 to-teal-400/20 rounded-full blur-xl animate-bounce delay-2000" style={{animationDuration: '5s'}}></div>
+
+        {/* Geometric shapes */}
+        <div className="absolute top-1/4 left-1/3 w-2 h-2 bg-cyan-400/30 rotate-45 animate-pulse"></div>
+        <div className="absolute bottom-1/3 left-1/4 w-3 h-3 bg-blue-400/30 rotate-12 animate-pulse delay-700"></div>
+        <div className="absolute top-2/3 right-1/3 w-2 h-2 bg-purple-400/30 rotate-45 animate-pulse delay-1400"></div>
+
+        {/* Grid pattern overlay */}
+        <div className="absolute inset-0 bg-[radial-gradient(circle_500px_at_50%_200px,rgba(56,189,248,0.05),transparent)]"></div>
       </div>
 
       {/* Main Header */}
       <Header userName={undefined} userProfileImageUrl={undefined} /> {/* Pass undefined as no user is logged in yet */}
 
       {/* Main Content (centered) */}
-      <div className="flex-grow flex items-center justify-center p-6">
-        <div className="w-full max-w-md">
+      <div className="flex-grow flex items-center justify-center p-4"> {/* Reduced padding */}
+        <div className="w-full max-w-sm"> {/* Reduced from max-w-md to max-w-sm */}
           {/* Card */}
-          <div className="bg-slate-800/30 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-8 shadow-2xl">
+          <div className="bg-slate-800/40 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-6 shadow-2xl"> {/* Reduced padding from p-8 to p-6 */}
             {/* Header */}
-            <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold text-white mb-2">Create Account</h2>
-              <p className="text-slate-400">Join ResumeCraft and build your perfect resume</p>
+            <div className="text-center mb-6"> {/* Reduced margin from mb-8 to mb-6 */}
+              <h2 className="text-2xl font-bold text-white mb-2">Create Account</h2> {/* Reduced from text-3xl to text-2xl */}
+              <p className="text-slate-400 text-sm">Join ResumeCraft and build your perfect resume</p>
             </div>
 
             {/* Form */}
-            <form onSubmit={handleRegister} className="space-y-6">
+            <form onSubmit={handleRegister} className="space-y-4"> {/* Reduced space from space-y-6 to space-y-4 */}
               <div>
                 <FloatingLabelInput
                   id="name"
@@ -214,7 +228,7 @@ export default function RegisterPage() {
                   icon={User}
                 />
                 {errors.name && (
-                  <p className="mt-2 text-sm text-red-400 flex items-center gap-1">
+                  <p className="mt-1 text-sm text-red-400 flex items-center gap-1"> {/* Reduced margin */}
                     <AlertCircle className="w-4 h-4" />
                     {errors.name}
                   </p>
@@ -233,7 +247,7 @@ export default function RegisterPage() {
                   icon={Mail}
                 />
                 {errors.email && (
-                  <p className="mt-2 text-sm text-red-400 flex items-center gap-1">
+                  <p className="mt-1 text-sm text-red-400 flex items-center gap-1"> {/* Reduced margin */}
                     <AlertCircle className="w-4 h-4" />
                     {errors.email}
                   </p>
@@ -253,7 +267,7 @@ export default function RegisterPage() {
                 />
                 <PasswordStrengthIndicator password={formData.password} />
                 {errors.password && (
-                  <p className="mt-2 text-sm text-red-400 flex items-center gap-1">
+                  <p className="mt-1 text-sm text-red-400 flex items-center gap-1"> {/* Reduced margin */}
                     <AlertCircle className="w-4 h-4" />
                     {errors.password}
                   </p>
@@ -272,13 +286,13 @@ export default function RegisterPage() {
                   icon={Lock}
                 />
                 {errors.confirmPassword && (
-                  <p className="mt-2 text-sm text-red-400 flex items-center gap-1">
+                  <p className="mt-1 text-sm text-red-400 flex items-center gap-1"> {/* Reduced margin */}
                     <AlertCircle className="w-4 h-4" />
                     {errors.confirmPassword}
                   </p>
                 )}
                 {formData.confirmPassword && formData.password === formData.confirmPassword && !errors.confirmPassword && (
-                  <p className="mt-2 text-sm text-green-400 flex items-center gap-1">
+                  <p className="mt-1 text-sm text-green-400 flex items-center gap-1"> {/* Reduced margin */}
                     <CheckCircle className="w-4 h-4" />
                     Passwords match
                   </p>
@@ -288,7 +302,7 @@ export default function RegisterPage() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full py-4 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-semibold rounded-xl transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg hover:shadow-cyan-500/25 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                className="w-full py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-semibold rounded-xl transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg hover:shadow-cyan-500/25 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2" // Reduced padding from py-4 to py-3
               >
                 {isLoading ? (
                   <div className="flex items-center justify-center gap-2">
@@ -302,7 +316,7 @@ export default function RegisterPage() {
             </form>
 
             {/* Divider */}
-            <div className="flex items-center my-6">
+            <div className="flex items-center my-4"> {/* Reduced margin from my-6 to my-4 */}
               <div className="flex-1 h-px bg-slate-700"></div>
               <span className="px-4 text-slate-400 text-sm">or</span>
               <div className="flex-1 h-px bg-slate-700"></div>
@@ -312,7 +326,7 @@ export default function RegisterPage() {
             <button
               onClick={handleGoogleRegister}
               disabled={isLoading}
-              className="w-full py-4 bg-white hover:bg-gray-50 text-gray-900 font-semibold rounded-xl transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              className="w-full py-3 bg-white hover:bg-gray-50 text-gray-900 font-semibold rounded-xl transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none" // Reduced padding from py-4 to py-3
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -324,7 +338,7 @@ export default function RegisterPage() {
             </button>
 
             {/* Footer */}
-            <p className="text-center text-slate-400 mt-6">
+            <p className="text-center text-slate-400 mt-4 text-sm"> {/* Reduced margin and font size */}
               Already have an account?{' '}
               <Link href="/auth/login" className="text-cyan-400 hover:text-cyan-300 font-medium transition-colors duration-300">
                 Sign in here
@@ -333,17 +347,17 @@ export default function RegisterPage() {
           </div>
 
           {/* Trust indicators */}
-          <div className="flex items-center justify-center gap-6 mt-8 text-slate-500 text-sm">
+          <div className="flex items-center justify-center gap-4 mt-6 text-slate-500 text-xs"> {/* Reduced gaps, margins, and font size */}
             <div className="flex items-center gap-1">
-              <CheckCircle className="w-4 h-4" />
+              <CheckCircle className="w-3 h-3" /> {/* Reduced icon size */}
               <span>Secure</span>
             </div>
             <div className="flex items-center gap-1">
-              <CheckCircle className="w-4 h-4" />
+              <CheckCircle className="w-3 h-3" />
               <span>Fast Setup</span>
             </div>
             <div className="flex items-center gap-1">
-              <CheckCircle className="w-4 h-4" />
+              <CheckCircle className="w-3 h-3" />
               <span>Free Forever</span>
             </div>
           </div>

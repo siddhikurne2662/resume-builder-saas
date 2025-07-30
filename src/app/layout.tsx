@@ -1,6 +1,6 @@
 // src/app/layout.tsx
 import './globals.css';
-import { Outfit, Inter } from 'next/font/google'; // Keep the fonts
+import { Outfit, Inter } from 'next/font/google';
 
 const outfit = Outfit({
   weight: ['400', '500', '600', '700'],
@@ -17,7 +17,7 @@ const inter = Inter({
 });
 
 export const metadata = {
-  title: 'ResumeCraft - Build Your Professional Resume', // Updated title
+  title: 'ResumeCraft - Build Your Professional Resume',
   description: 'Our intuitive resume builder helps you create a professional resume that highlights your skills and experience, landing you the job you deserve.',
 };
 
@@ -27,10 +27,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    // Apply the font variables globally
-    <html lang="en" className={`${outfit.variable} ${inter.variable}`}>
-      {/* Set the default font for the body here based on the landing page's primary font */}
-      <body className="font-inter antialiased"> {/* No text-gray-800 or bg-color here, as Stitch HTML controls it */}
+    // Add data-scroll-behavior="smooth" here
+    <html lang="en" className={`${outfit.variable} ${inter.variable}`} data-scroll-behavior="smooth">
+      <body className="font-inter antialiased">
         {children}
       </body>
     </html>

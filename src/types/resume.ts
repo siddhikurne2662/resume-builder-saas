@@ -2,6 +2,7 @@
 
 // Define the ResumeData interface here, with 'id' as string
 export interface ResumeData {
+  template: string;
   personalInfo: {
     name: string;
     email: string;

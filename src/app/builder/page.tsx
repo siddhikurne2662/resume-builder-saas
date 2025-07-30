@@ -1,204 +1,517 @@
-// src/app/builder/page.tsx
-'use client'; // This directive makes the component a Client Component.
+"use client";
+import React, { useState, useCallback } from 'react';
+import {
+  Download,
+  FileText,
+  User,
+  Briefcase,
+  GraduationCap,
+  Award,
+  Plus,
+  Trash2,
+  Eye,
+  ChevronDown,
+  CheckCircle
+} from 'lucide-react';
 
-import React, { useState, useEffect, useCallback } from 'react';
-import Header from '../components/Header'; // Reusing Header
-import ResumeEditor from '../components/ResumeEditor';
-import ResumePreview from '../components/ResumePreview';
-import MobileTabs from '../components/MobileTabs';
-import LoadingSkeleton from '../components/LoadingSkeleton';
-import { ResumeData } from '@/types/resume';
-import { Toaster, toast } from 'react-hot-toast';
+// Types
+interface PersonalInfo {
+  name: string;
+  email: string;
+  phone: string;
+  linkedin: string;
+  portfolio: string;
+  address: string;
+}
 
-// Initial state for your resume data.
+interface Experience {
+  id: string;
+  title: string;
+  company: string;
+  startDate: string;
+  endDate: string;
+  description: string[];
+}
+
+interface Education {
+  id: string;
+  degree: string;
+  institution: string;
+  startDate: string;
+  endDate: string;
+  gpa?: string;
+}
+
+interface Skills {
+  frontend: string[];
+  tools: string[];
+  other: string[];
+}
+
+interface ResumeData {
+  personalInfo: PersonalInfo;
+  summary: string;
+  experience: Experience[];
+  education: Education[];
+  skills: Skills;
+}
+
+// Initial data
 const initialResumeData: ResumeData = {
   personalInfo: {
-    name: 'Siddhant Kurne',
-    email: 'siddhant.k@example.com',
-    phone: '+91 98765 43210',
-    linkedin: 'linkedin.com/in/siddhantkurne',
-    portfolio: 'siddhant.dev',
-    address: 'Navi Mumbai, Maharashtra, India',
+    name: 'Eric Johnson',
+    email: 'eric.johnson@example.com',
+    phone: '+1 (555) 123-4567',
+    linkedin: 'linkedin.com/in/ericjohnson',
+    portfolio: 'ericjohnson.dev',
+    address: 'San Francisco, CA',
   },
-  summary: "A highly motivated third-year diploma student with hands-on front-end development experience, specializing in building responsive and user-friendly web applications. Currently leading front-end initiatives at Pristine Pads and with two valuable internships under my belt, eager to contribute robust solutions and learn full-stack concepts.",
+  summary: "Results-driven Software Engineer with 5+ years of experience in full-stack development. Proven track record of delivering scalable web applications and leading cross-functional teams to success.",
   experience: [
     {
       id: 'exp-1',
-      title: 'Lead Front-End Developer',
-      company: 'Pristine Pads',
-      startDate: 'Jan 2024',
+      title: 'Senior Software Engineer',
+      company: 'Tech Solutions Inc.',
+      startDate: '2022',
       endDate: 'Present',
       description: [
-        'Led development of responsive user interfaces using React and Tailwind CSS for key client projects.',
-        'Collaborated closely with UX/UI designers to translate wireframes and mockups into pixel-perfect, interactive web experiences.',
-        'Optimized application performance and loading times by implementing code splitting and lazy loading techniques, resulting in a 20% reduction in initial load time.',
-        'Mentored junior developers on best practices in front-end development and code quality.',
+        'Led development of microservices architecture serving 1M+ users',
+        'Improved application performance by 40% through code optimization',
+        'Mentored junior developers and conducted code reviews'
       ],
     },
     {
       id: 'exp-2',
-      title: 'Front-End Development Intern',
-      company: 'Tech Solutions Inc.',
-      startDate: 'May 2023',
-      endDate: 'Aug 2023',
+      title: 'Software Engineer',
+      company: 'Digital Innovations Co.',
+      startDate: '2020',
+      endDate: '2022',
       description: [
-        'Assisted in developing and maintaining client-side applications, contributing to feature development cycles.',
-        'Implemented new UI components and integrated APIs under the guidance of senior developers.',
-        'Participated in code reviews and contributed to improving front-end code consistency and maintainability.',
-      ],
-    },
-    {
-      id: 'exp-3',
-      title: 'Web Development Intern',
-      company: 'Digital Innovators Co.',
-      startDate: 'Jan 2023',
-      endDate: 'Apr 2023',
-      description: [
-        'Developed static and dynamic web pages using HTML, CSS, and JavaScript.',
-        'Learned fundamental concepts of responsive design and cross-browser compatibility.',
-        'Assisted in content management system updates and website maintenance tasks.',
+        'Developed responsive web applications using React and Node.js',
+        'Collaborated with UX/UI team to implement user-centered designs',
+        'Reduced bug reports by 35% through comprehensive testing'
       ],
     },
   ],
   education: [
     {
       id: 'edu-1',
-      degree: 'Third-Year Diploma in Computer Engineering',
-      institution: 'Government Polytechnic, Mumbai',
-      startDate: 'Aug 2022',
-      endDate: 'Expected May 2025',
-      gpa: '9.0/10 (Current)',
+      degree: 'Bachelor of Science in Computer Science',
+      institution: 'University of California, Berkeley',
+      startDate: '2016',
+      endDate: '2020',
+      gpa: '3.8/4.0',
     },
   ],
   skills: {
-    frontend: ['HTML5', 'CSS3', 'JavaScript (ES6+)', 'TypeScript', 'React.js', 'Next.js', 'Tailwind CSS', 'Bootstrap', 'Sass/Less', 'Responsive Design', 'Webpack'],
-    tools: ['Git & GitHub', 'VS Code', 'Figma', 'Postman', 'NPM/Yarn', 'ESLint', 'Prettier'],
-    other: ['API Integration', 'Problem Solving', 'Team Collaboration', 'Agile Methodologies', 'UI/UX Principles', 'Debugging'],
+    frontend: ['JavaScript', 'TypeScript', 'React', 'Vue.js', 'HTML5', 'CSS3'],
+    tools: ['Git', 'Docker', 'AWS', 'Jenkins', 'Jira', 'Figma'],
+    other: ['Node.js', 'Python', 'PostgreSQL', 'MongoDB', 'REST APIs', 'GraphQL'],
   },
 };
 
-export default function BuilderPage() {
-  const [resumeData, setResumeData] = useState<ResumeData>(initialResumeData);
-  const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'edit' | 'preview'>('edit');
-  const [selectedTemplate, setSelectedTemplate] = useState('modern-minimal');
-  const [zoomLevel, setZoomLevel] = useState(1);
-  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+// Form Components
+const FormSection = ({ title, icon: Icon, children, isOpen = true }: {
+  title: string;
+  icon: any;
+  children: React.ReactNode;
+  isOpen?: boolean;
+}) => {
+  const [open, setOpen] = useState(isOpen);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-      toast.success('Resume data loaded!');
-    }, 1500);
-    return () => clearTimeout(timer);
-  }, []);
+  return (
+    <div className="mb-6 bg-white rounded-lg border border-gray-200">
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center justify-between p-4 text-left hover:bg-gray-50"
+      >
+        <div className="flex items-center gap-3">
+          <Icon className="w-5 h-5 text-blue-600" />
+          <h3 className="font-semibold text-gray-900">{title}</h3>
+        </div>
+        <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && (
+        <div className="p-4 pt-0 border-t border-gray-100">
+          {children}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const InputField = ({ label, value, onChange, placeholder, type = "text" }: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  type?: string;
+}) => (
+  <div className="mb-4">
+    <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+    <input
+      type={type}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+    />
+  </div>
+);
+
+const TextAreaField = ({ label, value, onChange, placeholder, rows = 3 }: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  rows?: number;
+}) => (
+  <div className="mb-4">
+    <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+    <textarea
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+      rows={rows}
+      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+    />
+  </div>
+);
+
+// Resume Preview Component
+const ResumePreview = ({ data }: { data: ResumeData }) => (
+  <div className="bg-white p-8 shadow-lg max-w-full" style={{ minHeight: '842px', width: '595px' }}>
+    {/* Header */}
+    <div className="text-center mb-8">
+      <h1 className="text-3xl font-bold text-gray-900 mb-2">{data.personalInfo.name}</h1>
+      <div className="text-gray-600 space-y-1">
+        <p>{data.personalInfo.email} • {data.personalInfo.phone}</p>
+        <p>{data.personalInfo.linkedin}</p>
+        <p>{data.personalInfo.address}</p>
+      </div>
+    </div>
+
+    {/* Professional Summary */}
+    {data.summary && (
+      <div className="mb-6">
+        <h2 className="text-lg font-bold text-gray-900 mb-3 border-b border-gray-300 pb-1">PROFESSIONAL SUMMARY</h2>
+        <p className="text-gray-700 leading-relaxed">{data.summary}</p>
+      </div>
+    )}
+
+    {/* Experience */}
+    {data.experience.length > 0 && (
+      <div className="mb-6">
+        <h2 className="text-lg font-bold text-gray-900 mb-3 border-b border-gray-300 pb-1">PROFESSIONAL EXPERIENCE</h2>
+        {data.experience.map((exp) => (
+          <div key={exp.id} className="mb-4">
+            <div className="flex justify-between items-start mb-1">
+              <h3 className="font-semibold text-gray-900">{exp.title}</h3>
+              <span className="text-sm text-gray-600">{exp.startDate} - {exp.endDate}</span>
+            </div>
+            <p className="text-gray-700 font-medium mb-2">{exp.company}</p>
+            <ul className="list-disc list-inside text-gray-700 space-y-1">
+              {exp.description.map((item, index) => (
+                <li key={index} className="text-sm leading-relaxed">{item}</li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+    )}
+
+    {/* Education */}
+    {data.education.length > 0 && (
+      <div className="mb-6">
+        <h2 className="text-lg font-bold text-gray-900 mb-3 border-b border-gray-300 pb-1">EDUCATION</h2>
+        {data.education.map((edu) => (
+          <div key={edu.id} className="mb-2">
+            <div className="flex justify-between items-start">
+              <div>
+                <h3 className="font-semibold text-gray-900">{edu.degree}</h3>
+                <p className="text-gray-700">{edu.institution}</p>
+                {edu.gpa && <p className="text-sm text-gray-600">GPA: {edu.gpa}</p>}
+              </div>
+              <span className="text-sm text-gray-600">{edu.startDate} - {edu.endDate}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    )}
+
+    {/* Skills */}
+    <div className="mb-6">
+      <h2 className="text-lg font-bold text-gray-900 mb-3 border-b border-gray-300 pb-1">TECHNICAL SKILLS</h2>
+      <div className="space-y-2">
+        {Object.entries(data.skills).map(([category, skills]) => (
+          <div key={category}>
+            <span className="font-medium text-gray-900 capitalize">{category.replace(/([A-Z])/g, ' $1').trim()}: </span>
+            <span className="text-gray-700">{skills.join(', ')}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+);
+
+// Main Component
+export default function ResumeBuilder() {
+  const [resumeData, setResumeData] = useState<ResumeData>(initialResumeData);
+
+  const updatePersonalInfo = (field: keyof PersonalInfo, value: string) => {
+    setResumeData(prev => ({
+      ...prev,
+      personalInfo: { ...prev.personalInfo, [field]: value }
+    }));
+  };
+
+  const updateSummary = (value: string) => {
+    setResumeData(prev => ({ ...prev, summary: value }));
+  };
+
+  const addExperience = () => {
+    const newExp: Experience = {
+      id: `exp-${Date.now()}`,
+      title: '',
+      company: '',
+      startDate: '',
+      endDate: '',
+      description: [''],
+    };
+    setResumeData(prev => ({
+      ...prev,
+      experience: [...prev.experience, newExp]
+    }));
+  };
+
+  const updateExperience = (id: string, field: keyof Experience, value: any) => {
+    setResumeData(prev => ({
+      ...prev,
+      experience: prev.experience.map(exp =>
+        exp.id === id ? { ...exp, [field]: value } : exp
+      )
+    }));
+  };
+
+  const removeExperience = (id: string) => {
+    setResumeData(prev => ({
+      ...prev,
+      experience: prev.experience.filter(exp => exp.id !== id)
+    }));
+  };
 
   const calculateCompletionPercentage = useCallback(() => {
     let completedFields = 0;
     let totalFields = 0;
-    for (const key in resumeData.personalInfo) { totalFields++; if (resumeData.personalInfo[key as keyof typeof resumeData.personalInfo]) { completedFields++; } }
-    totalFields++; if (resumeData.summary) completedFields++;
+
+    // Personal info fields
+    Object.values(resumeData.personalInfo).forEach(value => {
+      totalFields++;
+      if (value.trim()) completedFields++;
+    });
+
+    // Summary
+    totalFields++;
+    if (resumeData.summary.trim()) completedFields++;
+
+    // Experience
     totalFields += resumeData.experience.length * 5;
     resumeData.experience.forEach(exp => {
-      if (exp.title) completedFields++; if (exp.company) completedFields++; if (exp.startDate) completedFields++; if (exp.endDate) completedFields++;
-      if (exp.description.filter(d => d.trim() !== '').length > 0) completedFields++;
+      if (exp.title.trim()) completedFields++;
+      if (exp.company.trim()) completedFields++;
+      if (exp.startDate.trim()) completedFields++;
+      if (exp.endDate.trim()) completedFields++;
+      if (exp.description.some(d => d.trim())) completedFields++;
     });
-    totalFields += resumeData.education.length * 4;
-    resumeData.education.forEach(edu => {
-      if (edu.degree) completedFields++; if (edu.institution) completedFields++; if (edu.startDate) completedFields++; if (edu.endDate) completedFields++;
-      if (edu.gpa) completedFields++;
-    });
-    totalFields += Object.keys(resumeData.skills).length;
-    for (const category in resumeData.skills) {
-      if (resumeData.skills[category as keyof typeof resumeData.skills].length > 0) { completedFields++; }
-    }
-    return totalFields > 0 ? (completedFields / totalFields) * 100 : 0;
+
+    return totalFields > 0 ? Math.round((completedFields / totalFields) * 100) : 0;
   }, [resumeData]);
 
   const completionPercentage = calculateCompletionPercentage();
 
-  const handleDownloadPdf = () => {
-    toast.success('PDF download initiated! (Feature coming soon)');
-  };
-
-  const handleZoomChange = (scale: number) => {
-    setZoomLevel(scale);
-  };
-
-  const handleSelectTemplate = (template: string) => {
-    setSelectedTemplate(template);
-    toast.success(`Template changed to ${template.replace('-', ' ')}!`);
-  };
-
   return (
-    <div className="flex flex-col min-h-screen">
-      <Toaster position="bottom-right" reverseOrder={false} />
-      <Header
-        onDownloadPdf={handleDownloadPdf}
-        onSelectTemplate={handleSelectTemplate}
-        onZoomChange={handleZoomChange}
-        onToggleMobileSidebar={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
-        isMobileSidebarOpen={isMobileSidebarOpen}
-        activeTemplate={selectedTemplate}
-      />
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      {/* Header */}
+      <header className="bg-white border-b border-gray-200 px-6 py-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="text-2xl font-bold text-blue-600">ResumeBuilder</div>
+            <div className="hidden md:flex items-center gap-2 bg-green-50 text-green-700 px-3 py-1 rounded-full text-sm font-medium">
+              <CheckCircle className="w-4 h-4" />
+              {completionPercentage}% Complete
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <button className="flex items-center gap-2 px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
+              <Eye className="w-4 h-4" />
+              Preview
+            </button>
+            <div className="relative">
+              <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
+                <Download className="w-4 h-4" />
+                Download PDF
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
 
-      <div className="flex-grow flex flex-col md:flex-row gap-6 p-4 md:p-6 relative">
-        {isMobileSidebarOpen && (
-          <div
-            className="fixed inset-0 bg-black bg-opacity-50 z-30 md:hidden"
-            onClick={() => setIsMobileSidebarOpen(false)}
-          ></div>
-        )}
+      {/* Main Content */}
+      <div className="flex-1 flex">
+        {/* Left Panel - Form */}
+        <div className="w-1/2 bg-gray-50 p-6 overflow-y-auto">
+          <div className="max-w-lg mx-auto">
+            <div className="mb-6">
+              <h1 className="text-2xl font-bold text-gray-900 mb-2">Business and management</h1>
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <FileText className="w-4 h-4" />
+                Resume template
+              </div>
+            </div>
 
-        <div
-          className={`
-            w-full md:w-2/5 lg:w-2/5
-            bg-white rounded-xl shadow-lg border border-gray-100
-            overflow-y-auto custom-scrollbar
-            md:relative md:top-0 md:h-auto
-            fixed top-0 left-0 h-full z-40
-            transform transition-transform duration-300 ease-in-out
-            ${isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-            md:translate-x-0
-            pb-20 md:pb-0
-          `}
-        >
-          <div className="p-6">
-            <h2 className="text-3xl font-outfit font-bold text-gray-800 mb-6 pb-3 border-b border-gray-200">
-              Edit Your Resume
-            </h2>
-            {isLoading ? (
-              <LoadingSkeleton lines={10} height="h-10" />
-            ) : (
-              <ResumeEditor
-                resumeData={resumeData}
-                setResumeData={setResumeData}
-                completionPercentage={completionPercentage}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <FileText className="w-5 h-5 text-blue-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-blue-900 mb-1">Ensure your resume fits the job opening</h3>
+                  <p className="text-sm text-blue-700">
+                    Add a job posting you're applying for and we'll show you what to optimize.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Personal Details */}
+            <FormSection title="Personal Details" icon={User}>
+              <div className="grid grid-cols-2 gap-4">
+                <InputField
+                  label="First Name"
+                  value={resumeData.personalInfo.name.split(' ')[0] || ''}
+                  onChange={(value) => {
+                    const lastName = resumeData.personalInfo.name.split(' ').slice(1).join(' ');
+                    updatePersonalInfo('name', `${value} ${lastName}`.trim());
+                  }}
+                  placeholder="Eric"
+                />
+                <InputField
+                  label="Last Name"
+                  value={resumeData.personalInfo.name.split(' ').slice(1).join(' ') || ''}
+                  onChange={(value) => {
+                    const firstName = resumeData.personalInfo.name.split(' ')[0] || '';
+                    updatePersonalInfo('name', `${firstName} ${value}`.trim());
+                  }}
+                  placeholder="Johnson"
+                />
+              </div>
+              <InputField
+                label="Email"
+                value={resumeData.personalInfo.email}
+                onChange={(value) => updatePersonalInfo('email', value)}
+                placeholder="eric.johnson@example.com"
+                type="email"
               />
-            )}
+              <InputField
+                label="Phone"
+                value={resumeData.personalInfo.phone}
+                onChange={(value) => updatePersonalInfo('phone', value)}
+                placeholder="+1 (555) 123-4567"
+                type="tel"
+              />
+              <InputField
+                label="LinkedIn"
+                value={resumeData.personalInfo.linkedin}
+                onChange={(value) => updatePersonalInfo('linkedin', value)}
+                placeholder="linkedin.com/in/ericjohnson"
+              />
+              <InputField
+                label="Address"
+                value={resumeData.personalInfo.address}
+                onChange={(value) => updatePersonalInfo('address', value)}
+                placeholder="San Francisco, CA"
+              />
+            </FormSection>
+
+            {/* Professional Summary */}
+            <FormSection title="Professional Summary" icon={FileText}>
+              <TextAreaField
+                label="Summary"
+                value={resumeData.summary}
+                onChange={updateSummary}
+                placeholder="Write a brief summary of your professional background..."
+                rows={4}
+              />
+            </FormSection>
+
+            {/* Experience */}
+            <FormSection title="Work Experience" icon={Briefcase}>
+              {resumeData.experience.map((exp, index) => (
+                <div key={exp.id} className="border border-gray-200 rounded-lg p-4 mb-4">
+                  <div className="flex justify-between items-center mb-4">
+                    <h4 className="font-medium text-gray-900">Experience {index + 1}</h4>
+                    <button
+                      onClick={() => removeExperience(exp.id)}
+                      className="text-red-500 hover:text-red-700"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <InputField
+                    label="Job Title"
+                    value={exp.title}
+                    onChange={(value) => updateExperience(exp.id, 'title', value)}
+                    placeholder="Senior Software Engineer"
+                  />
+                  <InputField
+                    label="Company"
+                    value={exp.company}
+                    onChange={(value) => updateExperience(exp.id, 'company', value)}
+                    placeholder="Tech Solutions Inc."
+                  />
+                  <div className="grid grid-cols-2 gap-4">
+                    <InputField
+                      label="Start Date"
+                      value={exp.startDate}
+                      onChange={(value) => updateExperience(exp.id, 'startDate', value)}
+                      placeholder="2022"
+                    />
+                    <InputField
+                      label="End Date"
+                      value={exp.endDate}
+                      onChange={(value) => updateExperience(exp.id, 'endDate', value)}
+                      placeholder="Present"
+                    />
+                  </div>
+                  <TextAreaField
+                    label="Description"
+                    value={exp.description.join('\n')}
+                    onChange={(value) => updateExperience(exp.id, 'description', value.split('\n'))}
+                    placeholder="• Led development of microservices architecture&#10;• Improved application performance by 40%"
+                    rows={4}
+                  />
+                </div>
+              ))}
+              <button
+                onClick={addExperience}
+                className="flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium"
+              >
+                <Plus className="w-4 h-4" />
+                Add Experience
+              </button>
+            </FormSection>
           </div>
         </div>
 
-        <div
-          className={`
-            w-full md:w-3/5 lg:w-3/5
-            bg-white rounded-xl shadow-lg border border-gray-100
-            overflow-y-auto custom-scrollbar
-            ${activeTab === 'preview' ? 'block' : 'hidden'} md:block
-            pb-20 md:pb-0
-          `}
-        >
-          <div className="p-6 h-full flex items-center justify-center">
-            {isLoading ? (
-              <LoadingSkeleton lines={20} height="h-6" width="w-3/4" />
-            ) : (
-              <ResumePreview resumeData={resumeData} zoomLevel={zoomLevel} activeTemplate={selectedTemplate} />
-            )}
+        {/* Right Panel - Preview */}
+        <div className="w-1/2 bg-white p-6 overflow-y-auto">
+          <div className="flex justify-center">
+            <div className="transform scale-75 origin-top">
+              <ResumePreview data={resumeData} />
+            </div>
           </div>
         </div>
       </div>
-
-      <MobileTabs activeTab={activeTab} onTabChange={setActiveTab} />
     </div>
   );
 }
