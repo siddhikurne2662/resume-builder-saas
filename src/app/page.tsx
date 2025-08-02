@@ -1,41 +1,38 @@
 // src/app/page.tsx
 import React from 'react';
 import Link from 'next/link';
-import { FileText, PencilLine, Share2 } from 'lucide-react';
+import { FileText, PencilLine, Share2, Sparkles, UserCheck } from 'lucide-react';
 
-import Header from './components/Header'; // Ensure Header is imported
+import Header from './components/Header';
 
-// Helper component for the feature cards (redefined as it's not imported)
 interface FeatureCardProps {
-  icon: React.ElementType; // Lucide icon component
+  icon: React.ElementType;
   title: string;
   description: string;
 }
 
 const FeatureCard: React.FC<FeatureCardProps> = ({ icon: Icon, title, description }) => (
-  <div className="flex flex-1 gap-3 rounded-lg border border-dark-border-primary bg-dark-bg-secondary p-4 flex-col hover-lift transition-all-fast">
+  <div className="flex flex-1 gap-3 rounded-lg border border-dark-border-medium bg-dark-bg-card p-4 flex-col hover-lift transition-all-fast">
     <div className="text-white">
-      <Icon size={24} /> {/* Use Lucide icon */}
+      <Icon size={24} />
     </div>
     <div className="flex flex-col gap-1">
       <h2 className="text-white text-base font-bold leading-tight font-outfit">{title}</h2>
-      <p className="text-dark-text-light text-sm font-normal leading-normal font-inter">{description}</p>
+      <p className="text-dark-text-blue text-sm font-normal leading-normal font-inter">{description}</p>
     </div>
   </div>
 );
 
 export default function LandingPage() {
-  // Define a sample user name and profile image URL for the header
-  const sampleUserName = "Siddhant"; // Sample name for initial
-  const sampleUserProfileImage = 'https://images.unsplash.com/photo-1534528736603-514e8f17a944?q=80&w=1000&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'; // Sample image
+  // Sample user details, as this is a landing page before authentication
+  const sampleUserName = "Guest User";
+  const sampleUserProfileImage = 'https://images.unsplash.com/photo-1534528736603-514e8f17a944?q=80&w=1000&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D';
 
   return (
     <div className="relative flex size-full min-h-screen flex-col bg-dark-bg-main dark group/design-root overflow-x-hidden">
       <div className="layout-container flex h-full grow flex-col">
-        {/* Pass userProfileImageUrl and userName to Header */}
         <Header userProfileImageUrl={sampleUserProfileImage} userName={sampleUserName} />
 
-        {/* Main Content Area */}
         <div className="px-5 sm:px-10 lg:px-40 flex flex-1 justify-center py-5">
           <div className="layout-content-container flex flex-col max-w-[960px] flex-1">
             {/* Hero Section */}
@@ -50,14 +47,14 @@ export default function LandingPage() {
                       Craft a Resume That Gets You Hired
                     </h1>
                     <h2 className="text-white text-sm font-normal leading-normal @[480px]:text-base @[480px]:font-normal @[480px]:leading-normal font-inter">
-                      Our intuitive resume builder helps you create a professional resume that highlights your skills and experience, landing you the job you deserve.
+                      Our intuitive, AI-powered builder helps you create a professional resume that passes Applicant Tracking Systems (ATS) and lands you the job you deserve.
                     </h2>
                   </div>
-                  <Link href="/auth/register" passHref> {/* CHANGED: Redirect to register page */}
+                  <Link href="/auth/register" passHref>
                     <button
-                      className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-10 px-4 @[480px]:h-12 @[480px]:px-5 bg-light-accent-button text-dark-bg-primary text-sm font-bold leading-normal tracking-[0.015em] @[480px]:text-base @[480px]:font-bold @[480px]:leading-normal @[480px]:tracking-[0.015em] w-fit hover:opacity-90 transition-opacity animate-fade-in-up font-inter"
+                      className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-10 px-4 @[480px]:h-12 @[480px]:px-5 bg-blue-call-to-action text-white text-sm font-bold leading-normal tracking-[0.015em] @[480px]:text-base @[480px]:font-bold @[480px]:leading-normal @[480px]:tracking-[0.015em] w-fit hover:bg-blue-button-hover transition-colors animate-fade-in-up font-inter"
                     >
-                      <span className="truncate">Get Started</span>
+                      <span className="truncate">Create My Free Resume</span>
                     </button>
                   </Link>
                 </div>
@@ -72,30 +69,37 @@ export default function LandingPage() {
                     Key Features
                   </h1>
                   <p className="text-white text-base font-normal leading-normal max-w-[720px] font-inter">
-                    ResumeCraft offers a range of features designed to make resume building easy and effective.
+                    ResumeCraft offers a range of features designed to make resume building simple, intelligent, and effective.
                   </p>
                 </div>
-                <button
-                  className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-10 px-4 @[480px]:h-12 @[480px]:px-5 bg-light-accent-button text-dark-bg-primary text-sm font-bold leading-normal tracking-[0.015em] @[480px]:text-base @[480px]:font-bold @[480px]:leading-normal @[480px]:tracking-[0.015em] w-fit hover:opacity-90 transition-opacity font-inter"
-                >
-                  <span className="truncate">View All Features</span>
-                </button>
+                <Link href="/templates" passHref>
+                  <button
+                    className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-10 px-4 @[480px]:h-12 @[480px]:px-5 bg-light-accent-button text-dark-bg-card text-sm font-bold leading-normal tracking-[0.015em] @[480px]:text-base @[480px]:font-bold @[480px]:leading-normal @[480px]:tracking-[0.015em] w-fit hover:opacity-90 transition-opacity font-inter"
+                  >
+                    <span className="truncate">Explore Templates</span>
+                  </button>
+                </Link>
               </div>
               <div className="grid grid-cols-[repeat(auto-fit,minmax(158px,1fr))] gap-3 p-0">
                 <FeatureCard
                   icon={FileText}
                   title="Professional Templates"
-                  description="Choose from a variety of professionally designed templates to suit your industry and experience level."
+                  description="Choose from a variety of professionally designed templates to suit your industry and experience level, including modern and classic layouts."
                 />
                 <FeatureCard
-                  icon={PencilLine}
-                  title="Easy Customization"
-                  description="Customize your resume with our drag-and-drop editor, ensuring it reflects your unique qualifications."
+                  icon={Sparkles}
+                  title="AI-Powered Suggestions"
+                  description="Instantly generate or improve your professional summary and experience descriptions with our integrated AI."
+                />
+                <FeatureCard
+                  icon={UserCheck}
+                  title="ATS Optimization"
+                  description="Get an instant score and tailored feedback to ensure your resume is optimized to pass Applicant Tracking Systems."
                 />
                 <FeatureCard
                   icon={Share2}
-                  title="Export & Share"
-                  description="Easily export your resume in various formats and share it with potential employers."
+                  title="Save & Download"
+                  description="Save your resume to your account and easily export it to PDF, ready to share with potential employers."
                 />
               </div>
             </div>
@@ -111,9 +115,9 @@ export default function LandingPage() {
                 </div>
                 <div className="flex flex-1 justify-center">
                   <div className="flex justify-center">
-                    <Link href="/auth/register" passHref> {/* CHANGED: Redirect to register page */}
+                    <Link href="/auth/register" passHref>
                       <button
-                        className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-10 px-4 @[480px]:h-12 @[480px]:px-5 bg-light-accent-button text-dark-bg-primary text-sm font-bold leading-normal tracking-[0.015em] @[480px]:text-base @[480px]:font-bold @[480px]:leading-normal @[480px]:tracking-[0.015em] grow hover:opacity-90 transition-opacity font-inter"
+                        className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-10 px-4 @[480px]:h-12 @[480px]:px-5 bg-blue-call-to-action text-white text-sm font-bold leading-normal tracking-[0.015em] @[480px]:text-base @[480px]:font-bold @[480px]:leading-normal @[480px]:tracking-[0.015em] grow hover:bg-blue-button-hover transition-colors font-inter"
                       >
                         <span className="truncate">Create My Resume</span>
                       </button>

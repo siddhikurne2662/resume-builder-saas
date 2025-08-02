@@ -24,7 +24,7 @@ export default function TemplatesPage() {
   }, [auth]);
 
   const currentUserName = user?.displayName || user?.email?.split('@')[0] || "User";
-  const currentUserProfileImage = user?.photoURL || 'https://images.unsplash.com/photo-1494790108377-be9c29b29329?q=80&w=1000&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'; // Fallback
+  const currentUserProfileImage = user?.photoURL; // Fallback removed to let Header handle it
 
   // Define all your templates with specific image URLs from the public/images folder
   const allTemplates = [
@@ -42,7 +42,7 @@ export default function TemplatesPage() {
 
   return (
     <div className="relative flex size-full min-h-screen flex-col bg-dark-bg-main font-inter">
-      <Header userName={currentUserName} userProfileImageUrl={currentUserProfileImage} />
+      <Header />
       <div className="gap-1 px-4 sm:px-6 lg:px-6 flex flex-1 justify-center py-5">
         {/* Left Sidebar - Reusing Dashboard sidebar structure */}
         <div className="layout-content-container flex flex-col w-80 lg:w-[280px] xl:w-[320px] bg-dark-bg-main p-4">
@@ -51,9 +51,9 @@ export default function TemplatesPage() {
               <div className="flex gap-3 items-center">
                 <div
                   className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10"
-                  style={{ backgroundImage: `url("${currentUserProfileImage}")` }}
+                  style={{ backgroundImage: `url("${currentUserProfileImage || ''}")` }}
                 ></div>
-                <h1 className="text-white text-base font-medium leading-normal font-inter">{currentUserName}</h1>
+                {/* REMOVED: The user's name from the sidebar */}
               </div>
               <div className="flex flex-col gap-2">
                 <Link href="/dashboard" className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-dark-bg-card transition-colors">

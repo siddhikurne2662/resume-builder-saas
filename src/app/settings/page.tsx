@@ -6,15 +6,30 @@ import Link from 'next/link';
 import Header from '../components/Header';
 import FloatingLabelInput from '../components/FloatingLabelInput';
 import { Toaster, toast } from 'react-hot-toast';
-import { UserCheck, Lock, Palette } from 'lucide-react'; // Icons for preferences
-import { getAuth, updateProfile, updatePassword, signOut } from 'firebase/auth'; // Import Firebase Auth
-import { doc, getDoc, setDoc } from 'firebase/firestore'; // Import Firestore
-import { db } from '@/lib/firebase'; // Import initialized Firestore
+import { UserCheck, Lock, Palette, Home, FileText, ListOrdered, Settings, ChevronDown, X } from 'lucide-react';
+import { getAuth, updateProfile, updatePassword, signOut, onAuthStateChanged } from 'firebase/auth';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { useRouter } from 'next/navigation';
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState('account');
   const auth = getAuth();
-  const user = auth.currentUser;
+  const router = useRouter();
+  const [user, setUser] = useState(auth.currentUser);
+  const [loadingAuth, setLoadingAuth] = useState(true);
+
+  useEffect(() => {
+    const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
+      if (!currentUser) {
+        router.push('/auth/login');
+      } else {
+        setUser(currentUser);
+        setLoadingAuth(false);
+      }
+    });
+    return () => unsubscribeAuth();
+  }, [auth, router]);
 
   const [profile, setProfile] = useState({
     name: user?.displayName || '',
@@ -96,9 +111,8 @@ export default function SettingsPage() {
       const userDocRef = doc(db, 'users', user.uid);
       await setDoc(userDocRef, {
         name: profile.name,
-        email: profile.email, // Email change requires re-authentication and specific Firebase methods
-        // Add other profile fields here if you expand the profile state
-      }, { merge: true }); // Use merge to not overwrite other fields
+        email: profile.email,
+      }, { merge: true });
 
       toast.success("Profile updated successfully!");
       setProfile(prev => ({ ...prev, currentPassword: '', newPassword: '', confirmNewPassword: '' }));
@@ -126,16 +140,59 @@ export default function SettingsPage() {
     }
   };
 
-  const sampleUserName = user?.displayName || "Guest";
-  const sampleUserProfileImage = user?.photoURL || 'https://images.unsplash.com/photo-1494790108377-be9c29b29329?q=80&w=1000&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'; // Fallback image
+  if (loadingAuth) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-dark-bg-main text-white text-lg">
+        Loading settings...
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
+
+  const currentUserName = user.displayName || user.email?.split('@')[0] || "User";
 
   return (
     <div className="relative flex size-full min-h-screen flex-col bg-dark-bg-main font-inter">
       <Toaster position="bottom-right" reverseOrder={false} />
-      <Header userName={sampleUserName} userProfileImageUrl={sampleUserProfileImage} />
+      <Header />
 
-      <div className="px-4 sm:px-10 lg:px-40 flex flex-1 justify-center py-5">
-        <div className="layout-content-container flex flex-col max-w-[960px] flex-1 bg-dark-bg-main p-4 rounded-xl shadow-lg border border-dark-border-medium">
+      <div className="gap-1 px-4 sm:px-6 lg:px-6 flex flex-1 justify-center py-5">
+        {/* Left Sidebar - Reusing Dashboard sidebar structure */}
+        <div className="layout-content-container flex flex-col w-80 lg:w-[280px] xl:w-[320px] bg-dark-bg-main p-4">
+          <div className="flex h-full min-h-[700px] flex-col justify-between bg-dark-bg-main p-4">
+            <div className="flex flex-col gap-4">
+              <div className="flex gap-3 items-center">
+                <div
+                  className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10"
+                  style={{ backgroundImage: `url("${user.photoURL || ''}")` }}
+                ></div>
+              </div>
+              <div className="flex flex-col gap-2">
+                <Link href="/dashboard" className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-dark-bg-card transition-colors">
+                  <Home className="text-white h-6 w-6" />
+                  <p className="text-white text-sm font-medium leading-normal font-inter">Dashboard</p>
+                </Link>
+                <Link href="/dashboard" className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-dark-bg-card transition-colors">
+                  <FileText className="text-white h-6 w-6" />
+                  <p className="text-white text-sm font-medium leading-normal font-inter">My Resumes</p>
+                </Link>
+                <Link href="/templates" className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-dark-bg-card transition-colors">
+                    <ListOrdered className="text-white h-6 w-6" />
+                    <p className="text-white text-sm font-medium leading-normal font-inter">Templates</p>
+                </Link>
+                <Link href="/settings" className="flex items-center gap-3 px-3 py-2 rounded-lg bg-dark-bg-card transition-colors">
+                  <Settings className="text-white h-6 w-6" />
+                  <p className="text-white text-sm font-medium leading-normal font-inter">Settings</p>
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="layout-content-container flex flex-col max-w-[960px] flex-1">
           <div className="flex flex-wrap justify-between gap-3 p-4">
             <p className="text-white text-4xl font-bold leading-tight min-w-72 font-outfit">Settings</p>
           </div>
@@ -168,7 +225,7 @@ export default function SettingsPage() {
               <h2 className="text-white text-2xl font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5 font-outfit">Profile</h2>
               <div className="flex flex-col gap-4 px-4 py-3">
                 <FloatingLabelInput id="name" name="name" label="Full Name" type="text" value={profile.name} onChange={handleProfileChange} />
-                <FloatingLabelInput id="email" name="email" label="Email" type="email" value={profile.email} onChange={handleProfileChange} disabled /> {/* Email often disabled as it requires re-authentication and specific Firebase methods */}
+                <FloatingLabelInput id="email" name="email" label="Email" type="email" value={profile.email} onChange={handleProfileChange} disabled />
                 <FloatingLabelInput id="current-password" label="Current Password" type="password" name="currentPassword" value={profile.currentPassword} onChange={handleProfileChange} />
                 <FloatingLabelInput id="new-password" label="New Password" type="password" name="newPassword" placeholder="Enter new password" value={profile.newPassword} onChange={handleProfileChange} />
                 <FloatingLabelInput id="confirm-new-password" label="Confirm New Password" type="password" name="confirmNewPassword" placeholder="Confirm new password" value={profile.confirmNewPassword} onChange={handleProfileChange} />
@@ -185,11 +242,9 @@ export default function SettingsPage() {
             <>
               <h2 className="text-white text-2xl font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5 font-outfit">Preferences</h2>
               <div className="flex flex-col gap-4 px-4 py-3">
-                {/* Theme Selection */}
                 <div className="flex items-center gap-4 bg-dark-bg-card px-4 min-h-[72px] py-2 justify-between rounded-lg border border-dark-border-light">
                   <div className="flex flex-col justify-center">
                     <p className="text-white text-base font-medium leading-normal line-clamp-1 font-inter flex items-center gap-2">
-                      {/* Renamed Settings icon to UserCheck for consistency, or import Bell for notifications */}
                       <Palette className="h-5 w-5" /> Theme
                     </p>
                     <p className="text-dark-text-blue text-sm font-normal leading-normal line-clamp-2 font-inter">Choose your preferred application theme.</p>
@@ -207,7 +262,6 @@ export default function SettingsPage() {
                   </select>
                 </div>
 
-                {/* Notifications Toggle */}
                 <div className="flex items-center gap-4 bg-dark-bg-card px-4 min-h-[72px] py-2 justify-between rounded-lg border border-dark-border-light">
                   <div className="flex flex-col justify-center">
                     <p className="text-white text-base font-medium leading-normal line-clamp-1 font-inter flex items-center gap-2">
@@ -224,7 +278,6 @@ export default function SettingsPage() {
                   />
                 </div>
 
-                {/* Auto-Save Toggle */}
                 <div className="flex items-center gap-4 bg-dark-bg-card px-4 min-h-[72px] py-2 justify-between rounded-lg border border-dark-border-light">
                   <div className="flex flex-col justify-center">
                     <p className="text-white text-base font-medium leading-normal line-clamp-1 font-inter flex items-center gap-2">

@@ -133,11 +133,10 @@ export default function DashboardPage() {
   }
 
   const currentUserName = user.displayName || user.email?.split('@')[0] || "User";
-  const currentUserProfileImage = user.photoURL || 'https://images.unsplash.com/photo-1494790108377-be9c29b29329?q=80&w=1000&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D';
 
   return (
     <div className="relative flex size-full min-h-screen flex-col bg-dark-bg-main font-inter">
-      <Header userName={currentUserName} userProfileImageUrl={currentUserProfileImage} />
+      <Header />
       <div className="gap-1 px-4 sm:px-6 lg:px-6 flex flex-1 justify-center py-5">
         <div className="layout-content-container flex flex-col w-80 lg:w-[280px] xl:w-[320px] bg-dark-bg-main p-4">
           <div className="flex h-full min-h-[700px] flex-col justify-between bg-dark-bg-main p-4">
@@ -145,7 +144,7 @@ export default function DashboardPage() {
               <div className="flex gap-3 items-center">
                 <div
                   className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10"
-                  style={{ backgroundImage: `url("${currentUserProfileImage}")` }}
+                  style={{ backgroundImage: `url("${user.photoURL || ''}")` }}
                 ></div>
                 {/* REMOVED: This h1 tag that displayed the user's name in the sidebar */}
                 {/* <h1 className="text-white text-base font-medium leading-normal font-inter">{currentUserName}</h1> */}
