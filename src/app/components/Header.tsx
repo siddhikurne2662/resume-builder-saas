@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Download, LayoutTemplate, User, Menu, X, ZoomIn, ZoomOut, UserCheck, Settings } from 'lucide-react'; // Removed DownloadIcon from heroicons
+import { Download, LayoutTemplate, User, Menu, X, ZoomIn, ZoomOut, UserCheck, Settings, Save } from 'lucide-react'; // Added Save icon
 import { getAuth, signOut, type Auth } from 'firebase/auth';
 import { toast } from 'react-hot-toast';
 import { app } from '@/lib/firebase';
@@ -13,6 +13,7 @@ interface HeaderProps {
   onSelectTemplate?: (template: string) => void;
   onZoomChange?: (scale: number) => void;
   onToggleMobileSidebar?: () => void;
+  onSaveResume?: () => void; // Added onSaveResume prop
   isMobileSidebarOpen?: boolean;
   activeTemplate?: string;
   showBuilderActions?: boolean;
@@ -25,6 +26,7 @@ export default function Header({
   onSelectTemplate,
   onZoomChange,
   onToggleMobileSidebar,
+  onSaveResume, // Destructure new prop
   isMobileSidebarOpen,
   activeTemplate,
   showBuilderActions = false,
@@ -47,12 +49,14 @@ export default function Header({
   }, []);
 
   const templates = [
-    { name: 'Modern Minimal', value: 'modern-minimal' },
-    { name: 'Classic Professional', value: 'classic-pro' },
-    { name: 'Creative Bold', value: 'creative-bold' },
-    { name: 'LinkedIn Modern', value: 'linkedin-modern' },
-    { name: 'LinkedIn Professional', value: 'linkedin-professional' },
-    { name: 'LinkedIn Minimal', value: 'linkedin-minimal' },
+    // UPDATED TEMPLATE TITLES TO MATCH TEMPLATES PAGE
+    { name: 'Sleek Software Design', value: 'modern-minimal' },
+    { name: 'Professional Classic Layout', value: 'classic-pro' },
+    { name: 'Bold Modern Profile', value: 'creative-bold' },
+    { name: 'Clean Data-Focused', value: 'minimalist' },
+    { name: 'LinkedIn Data Pro', value: 'linkedin-modern' },
+    { name: 'Business Analyst Classic', value: 'linkedin-professional' },
+    { name: 'Concise Freelancer', value: 'linkedin-minimal' },
   ];
 
   const handleZoomIn = () => {
@@ -110,10 +114,6 @@ export default function Header({
           </div>
 
           <div className="flex items-center gap-2">
-            {/* THIS IS THE DOWNLOAD BUTTON YOU WANT TO KEEP FOR THE BUILDER PAGE */}
-            {/* The one you were seeing twice was likely an older version of this,
-                or a general 'Download' button intended for other pages.
-                Ensure there's no other direct <button>Download</button> in the Header outside this block. */}
             {showBuilderActions && (
               <>
                 <div className="relative">
@@ -155,7 +155,16 @@ export default function Header({
                   </button>
                 </div>
 
-                {/* This is the intended Download button in the builder context */}
+                {onSaveResume && (
+                  <button
+                    onClick={onSaveResume}
+                    className="bg-green-600 text-white hover:bg-green-700 font-bold px-4 py-2 rounded-full transition-colors flex items-center font-inter"
+                  >
+                    <Save className="mr-2 h-4 w-4" />
+                    Save
+                  </button>
+                )}
+
                 <button
                   onClick={onDownloadPdf}
                   className="bg-blue-call-to-action text-white hover:bg-blue-button-hover font-bold px-4 py-2 rounded-full transition-colors flex items-center font-inter"
@@ -165,7 +174,6 @@ export default function Header({
                 </button>
               </>
             )}
-            {/* Check here: Is there another <button>Download</button> outside the showBuilderActions block? If so, remove it. */}
 
             <div className="relative">
               <button

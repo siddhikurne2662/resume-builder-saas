@@ -26,18 +26,18 @@ export default function TemplatesPage() {
   const currentUserName = user?.displayName || user?.email?.split('@')[0] || "User";
   const currentUserProfileImage = user?.photoURL || 'https://images.unsplash.com/photo-1494790108377-be9c29b29329?q=80&w=1000&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'; // Fallback
 
-  // Define all your templates, including the new LinkedIn ones
+  // Define all your templates with specific image URLs from the public/images folder
   const allTemplates = [
-    { name: 'Modern Minimal', value: 'modern-minimal', imageUrl: 'https://images.unsplash.com/photo-1599305412497-6c3c54a9c3b8?q=80&w=1500&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D' },
-    { name: 'Classic Professional', value: 'classic-pro', imageUrl: 'https://images.unsplash.com/photo-1621935293699-075e7a9e2f4f?q=80&w=1500&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D' },
-    { name: 'Creative Bold', value: 'creative-bold', imageUrl: 'https://images.unsplash.com/photo-1582570054328-9a9c2f6d0a7a?q=80&w=1500&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D' },
-    { name: 'Minimalist', value: 'minimalist', imageUrl: 'https://images.unsplash.com/photo-1520692770258-2964e5251a3c?q=80&w=1500&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D' },
-    { name: 'LinkedIn Modern', value: 'linkedin-modern', imageUrl: 'http://googleusercontent.com/file_content/0' }, // Use content ID for uploaded image
-    { name: 'LinkedIn Professional', value: 'linkedin-professional', imageUrl: 'http://googleusercontent.com/file_content/1' }, // Use content ID for uploaded image
-    { name: 'LinkedIn Minimal', value: 'linkedin-minimal', imageUrl: 'http://googleusercontent.com/file_content/2' }, // Use content ID for uploaded image
-    // You might need to add placeholder image URLs if the provided image links aren't directly loadable in the browser.
-    // For these image URLs (file_content/0, 1, 2), you'll need to replace them with actual public URLs
-    // if you deploy the app, or store them in your /public directory and link to them like '/images/linkedin_modern.png'.
+    // Titles updated to be more descriptive of the design style, rather than specific roles
+    { name: 'Sleek Software Design', value: 'modern-minimal', imageUrl: '/images/imgi_5_software-engineering-lead.png' },
+    { name: 'Professional Classic Layout', value: 'classic-pro', imageUrl: '/images/imgi_1_financial-data-analyst.png' },
+    { name: 'Bold Modern Profile', value: 'creative-bold', imageUrl: '/images/imgi_11_marketing-manager.png' },
+    { name: 'Clean Data-Focused', value: 'minimalist', imageUrl: '/images/imgi_9_big-data-engineer.png' },
+    { name: 'Structured Data Analyst', value: 'linkedin-modern', imageUrl: '/images/imgi_12_data-analyst.png' },
+    { name: 'Timeless Business Professional', value: 'linkedin-professional', imageUrl: '/images/imgi_14_core-template-business-analyst.png' },
+    { name: 'Concise Freelancer', value: 'linkedin-minimal', imageUrl: '/images/imgi_22_freelance-v1.png' },
+    // You can add more templates and their corresponding image paths here,
+    // e.g., using imgi_10_e-commerce-chief-financial-officer.jpg for another style.
   ];
 
   return (

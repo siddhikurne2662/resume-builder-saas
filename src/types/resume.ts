@@ -29,8 +29,8 @@ export interface ResumeData {
     gpa: string;
   }[];
   skills: {
-    frontend: string[];
-    tools: string[];
-    other: string[];
+    Technical: string[];
+    Tools: string[];
+    Soft: string[];
   };
 }

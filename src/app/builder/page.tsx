@@ -1,5 +1,9 @@
+// src/app/builder/page.tsx
 "use client";
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic'; // Import dynamic
+
 import {
   Download,
   FileText,
@@ -10,54 +14,31 @@ import {
   Plus,
   Trash2,
   Eye,
+  CheckCircle,
+  Settings,
   ChevronDown,
-  CheckCircle
+  ChevronUp
 } from 'lucide-react';
+import EditorSection from '../components/EditorSection'; // This is the old EditorSection
+import ResumePreview from '../components/ResumePreview';
+import RightSidebar from '../components/RightSidebar';
+import Header from '../components/Header';
+import MobileTabs from '../components/MobileTabs';
+import { ResumeData } from '@/types/resume';
+// Removed direct import: import html2pdf from 'html2pdf.js';
+import { toast } from 'react-hot-toast';
+import { getAuth } from 'firebase/auth';
+import FloatingLabelInput from '../components/FloatingLabelInput'; // Re-import FloatingLabelInput
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
-// Types
-interface PersonalInfo {
-  name: string;
-  email: string;
-  phone: string;
-  linkedin: string;
-  portfolio: string;
-  address: string;
-}
+// Dynamically import html2pdf.js to ensure it's only loaded on the client side
+const html2pdf = dynamic(() => import('html2pdf.js'), { ssr: false });
 
-interface Experience {
-  id: string;
-  title: string;
-  company: string;
-  startDate: string;
-  endDate: string;
-  description: string[];
-}
 
-interface Education {
-  id: string;
-  degree: string;
-  institution: string;
-  startDate: string;
-  endDate: string;
-  gpa?: string;
-}
-
-interface Skills {
-  frontend: string[];
-  tools: string[];
-  other: string[];
-}
-
-interface ResumeData {
-  personalInfo: PersonalInfo;
-  summary: string;
-  experience: Experience[];
-  education: Education[];
-  skills: Skills;
-}
-
-// Initial data
+// Initial Resume Data (updated with generic skills)
 const initialResumeData: ResumeData = {
+  template: 'modern-minimal', // Default template
   personalInfo: {
     name: 'Eric Johnson',
     email: 'eric.johnson@example.com',
@@ -66,37 +47,37 @@ const initialResumeData: ResumeData = {
     portfolio: 'ericjohnson.dev',
     address: 'San Francisco, CA',
   },
-  summary: "Results-driven Software Engineer with 5+ years of experience in full-stack development. Proven track record of delivering scalable web applications and leading cross-functional teams to success.",
+  summary: "Results-driven professional with 5+ years of experience in my field. Proven track record of delivering high-quality results and leading cross-functional teams to success.",
   experience: [
     {
       id: 'exp-1',
-      title: 'Senior Software Engineer',
-      company: 'Tech Solutions Inc.',
+      title: 'Senior Professional',
+      company: 'Solutions Inc.',
       startDate: '2022',
       endDate: 'Present',
       description: [
-        'Led development of microservices architecture serving 1M+ users',
-        'Improved application performance by 40% through code optimization',
-        'Mentored junior developers and conducted code reviews'
+        'Led key projects serving 1M+ customers',
+        'Improved operational efficiency by 40% through process optimization',
+        'Mentored junior team members and conducted performance reviews'
       ],
     },
     {
       id: 'exp-2',
-      title: 'Software Engineer',
-      company: 'Digital Innovations Co.',
+      title: 'Professional',
+      company: 'Innovations Co.',
       startDate: '2020',
       endDate: '2022',
       description: [
-        'Developed responsive web applications using React and Node.js',
-        'Collaborated with UX/UI team to implement user-centered designs',
-        'Reduced bug reports by 35% through comprehensive testing'
+        'Developed and implemented strategic solutions',
+        'Collaborated with cross-functional teams to achieve targets',
+        'Reduced errors by 35% through comprehensive quality control'
       ],
     },
   ],
   education: [
     {
       id: 'edu-1',
-      degree: 'Bachelor of Science in Computer Science',
+      degree: 'Bachelor of Science in Business Administration',
       institution: 'University of California, Berkeley',
       startDate: '2016',
       endDate: '2020',
@@ -104,35 +85,41 @@ const initialResumeData: ResumeData = {
     },
   ],
   skills: {
-    frontend: ['JavaScript', 'TypeScript', 'React', 'Vue.js', 'HTML5', 'CSS3'],
-    tools: ['Git', 'Docker', 'AWS', 'Jenkins', 'Jira', 'Figma'],
-    other: ['Node.js', 'Python', 'PostgreSQL', 'MongoDB', 'REST APIs', 'GraphQL'],
+    Technical: ['Microsoft Office', 'Data Analysis', 'Project Management', 'CRM Software', 'Database Management', 'Reporting Tools'],
+    Tools: ['Slack', 'Trello', 'Salesforce', 'Google Analytics', 'Zoom', 'Adobe Creative Suite'],
+    Soft: ['Leadership', 'Communication', 'Problem Solving', 'Team Management', 'Strategic Planning', 'Time Management'],
   },
 };
 
-// Form Components
-const FormSection = ({ title, icon: Icon, children, isOpen = true }: {
+// Collapsible Section Component
+const CollapsibleSection = ({ title, icon: Icon, children, isOpen, onToggle }: {
   title: string;
-  icon: any;
+  icon: React.ElementType; // Changed to React.ElementType
   children: React.ReactNode;
-  isOpen?: boolean;
+  isOpen: boolean;
+  onToggle: () => void;
 }) => {
-  const [open, setOpen] = useState(isOpen);
-
   return (
-    <div className="mb-6 bg-white rounded-lg border border-gray-200">
+    <div className="bg-dark-bg-card border border-dark-border-light rounded-lg mb-10 overflow-hidden transition-all duration-200 hover-lift">
       <button
-        onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between p-4 text-left hover:bg-gray-50"
+        onClick={onToggle}
+        className="w-full p-6 flex items-center justify-between text-left hover:bg-dark-bg-medium transition-colors"
       >
-        <div className="flex items-center gap-3">
-          <Icon className="w-5 h-5 text-blue-600" />
-          <h3 className="font-semibold text-gray-900">{title}</h3>
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 bg-light-button-accent rounded-lg flex items-center justify-center">
+            <Icon className="w-6 h-6 text-white" />
+          </div>
+          <h3 className="text-xl font-semibold text-white font-outfit">{title}</h3>
         </div>
-        <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${open ? 'rotate-180' : ''}`} />
+        {isOpen ? (
+          <ChevronUp className="w-6 h-6 text-dark-text-blue" />
+        ) : (
+          <ChevronDown className="w-6 h-6 text-dark-text-blue" />
+        )}
       </button>
-      {open && (
-        <div className="p-4 pt-0 border-t border-gray-100">
+
+      {isOpen && (
+        <div className="p-6 pt-0 space-y-4">
           {children}
         </div>
       )}
@@ -140,123 +127,132 @@ const FormSection = ({ title, icon: Icon, children, isOpen = true }: {
   );
 };
 
-const InputField = ({ label, value, onChange, placeholder, type = "text" }: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  placeholder?: string;
-  type?: string;
-}) => (
-  <div className="mb-4">
-    <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
-    <input
-      type={type}
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      placeholder={placeholder}
-      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-    />
-  </div>
-);
 
-const TextAreaField = ({ label, value, onChange, placeholder, rows = 3 }: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  placeholder?: string;
-  rows?: number;
-}) => (
-  <div className="mb-4">
-    <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
-    <textarea
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      placeholder={placeholder}
-      rows={rows}
-      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
-    />
-  </div>
-);
-
-// Resume Preview Component
-const ResumePreview = ({ data }: { data: ResumeData }) => (
-  <div className="bg-white p-8 shadow-lg max-w-full" style={{ minHeight: '842px', width: '595px' }}>
-    {/* Header */}
-    <div className="text-center mb-8">
-      <h1 className="text-3xl font-bold text-gray-900 mb-2">{data.personalInfo.name}</h1>
-      <div className="text-gray-600 space-y-1">
-        <p>{data.personalInfo.email} • {data.personalInfo.phone}</p>
-        <p>{data.personalInfo.linkedin}</p>
-        <p>{data.personalInfo.address}</p>
-      </div>
-    </div>
-
-    {/* Professional Summary */}
-    {data.summary && (
-      <div className="mb-6">
-        <h2 className="text-lg font-bold text-gray-900 mb-3 border-b border-gray-300 pb-1">PROFESSIONAL SUMMARY</h2>
-        <p className="text-gray-700 leading-relaxed">{data.summary}</p>
-      </div>
-    )}
-
-    {/* Experience */}
-    {data.experience.length > 0 && (
-      <div className="mb-6">
-        <h2 className="text-lg font-bold text-gray-900 mb-3 border-b border-gray-300 pb-1">PROFESSIONAL EXPERIENCE</h2>
-        {data.experience.map((exp) => (
-          <div key={exp.id} className="mb-4">
-            <div className="flex justify-between items-start mb-1">
-              <h3 className="font-semibold text-gray-900">{exp.title}</h3>
-              <span className="text-sm text-gray-600">{exp.startDate} - {exp.endDate}</span>
-            </div>
-            <p className="text-gray-700 font-medium mb-2">{exp.company}</p>
-            <ul className="list-disc list-inside text-gray-700 space-y-1">
-              {exp.description.map((item, index) => (
-                <li key={index} className="text-sm leading-relaxed">{item}</li>
-              ))}
-            </ul>
-          </div>
-        ))}
-      </div>
-    )}
-
-    {/* Education */}
-    {data.education.length > 0 && (
-      <div className="mb-6">
-        <h2 className="text-lg font-bold text-gray-900 mb-3 border-b border-gray-300 pb-1">EDUCATION</h2>
-        {data.education.map((edu) => (
-          <div key={edu.id} className="mb-2">
-            <div className="flex justify-between items-start">
-              <div>
-                <h3 className="font-semibold text-gray-900">{edu.degree}</h3>
-                <p className="text-gray-700">{edu.institution}</p>
-                {edu.gpa && <p className="text-sm text-gray-600">GPA: {edu.gpa}</p>}
-              </div>
-              <span className="text-sm text-gray-600">{edu.startDate} - {edu.endDate}</span>
-            </div>
-          </div>
-        ))}
-      </div>
-    )}
-
-    {/* Skills */}
-    <div className="mb-6">
-      <h2 className="text-lg font-bold text-gray-900 mb-3 border-b border-gray-300 pb-1">TECHNICAL SKILLS</h2>
-      <div className="space-y-2">
-        {Object.entries(data.skills).map(([category, skills]) => (
-          <div key={category}>
-            <span className="font-medium text-gray-900 capitalize">{category.replace(/([A-Z])/g, ' $1').trim()}: </span>
-            <span className="text-gray-700">{skills.join(', ')}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  </div>
-);
-
-// Main Component
 export default function ResumeBuilder() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const resumePreviewRef = useRef<HTMLDivElement>(null);
   const [resumeData, setResumeData] = useState<ResumeData>(initialResumeData);
+  const [zoomLevel, setZoomLevel] = useState(1);
+  const [activeTab, setActiveTab] = useState<'edit' | 'preview'>('edit');
+  const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false);
+  const [currentResumeId, setCurrentResumeId] = useState<string | null>(null);
+
+  // Section visibility states
+  const [openSections, setOpenSections] = useState({
+    personal: true,
+    summary: false,
+    experience: false,
+    education: false,
+    skills: false
+  });
+
+  const toggleSection = (section: keyof typeof openSections) => {
+    setOpenSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
+  };
+
+  useEffect(() => {
+    const templateFromUrl = searchParams.get('template');
+    if (templateFromUrl) {
+      setResumeData(prev => ({ ...prev, template: templateFromUrl }));
+    }
+    const resumeIdFromUrl = searchParams.get('resumeId');
+    if (resumeIdFromUrl) {
+        setCurrentResumeId(resumeIdFromUrl);
+        toast.info("Loading existing resume data (feature to be implemented).");
+    }
+  }, [searchParams]);
+
+  const handleSelectTemplate = useCallback((template: string) => {
+    setResumeData(prev => ({ ...prev, template }));
+    toast.success(`Template changed to ${template}!`);
+  }, []);
+
+  const handleDownloadPdf = async () => {
+    if (resumePreviewRef.current) {
+      if (!html2pdf) { // Check if html2pdf is loaded
+        toast.error('PDF library not yet loaded. Please try again in a moment.', { id: 'pdf-toast' });
+        return; // Exit if html2pdf is not loaded
+      }
+      toast.loading('Generating PDF...', { id: 'pdf-toast' });
+      const element = resumePreviewRef.current;
+
+      const originalZoom = zoomLevel;
+      setZoomLevel(1); // Set to 100% for accurate capture
+      await new Promise(resolve => setTimeout(resolve, 100)); // Allow re-render
+
+      const opt = {
+        margin: [0.5, 0.5, 0.5, 0.5],
+        filename: `${resumeData.personalInfo.name.replace(/\s/g, '_')}_Resume.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: {
+          scale: 4,
+          useCORS: true,
+          logging: false,
+          allowTaint: true,
+          scrollX: 0,
+          scrollY: 0,
+          windowWidth: element.scrollWidth,
+          windowHeight: element.scrollHeight,
+        },
+        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
+      };
+
+      try {
+        await (html2pdf as any)().set(opt).from(element).save();
+        toast.success('PDF downloaded successfully!', { id: 'pdf-toast' });
+      } catch (error) {
+        console.error('Error generating PDF:', error);
+        toast.error('Failed to download PDF. Please try again.', { id: 'pdf-toast' });
+      } finally {
+        setZoomLevel(originalZoom); // Restore original zoom level
+      }
+    }
+  };
+
+  const handleSaveResume = async () => {
+    const auth = getAuth();
+    const user = auth.currentUser;
+
+    if (!user) {
+        toast.error("You must be logged in to save your resume.");
+        router.push('/auth/login');
+        return;
+    }
+
+    toast.loading('Saving resume...', { id: 'save-toast' });
+
+    try {
+        const resumeTitle = resumeData.personalInfo.name.trim() || 'Untitled Resume';
+        const resumeToSave = {
+            ...resumeData,
+            title: resumeTitle,
+            lastUpdated: serverTimestamp(),
+        };
+
+        let resumeDocRef;
+        if (currentResumeId) {
+            resumeDocRef = doc(db, 'users', user.uid, 'resumes', currentResumeId);
+            await setDoc(resumeDocRef, resumeToSave, { merge: true });
+            toast.success('Resume updated successfully!', { id: 'save-toast' });
+        } else {
+            const newDocRef = doc(db, 'users', user.uid, 'resumes');
+            await setDoc(newDocRef, { ...resumeToSave, createdAt: serverTimestamp() });
+            setCurrentResumeId(newDocRef.id);
+            toast.success('Resume saved successfully!', { id: 'save-toast' });
+            router.push(`/builder?resumeId=${newDocRef.id}&template=${resumeData.template}`);
+        }
+
+    } catch (error: any) {
+        console.error('Error saving resume:', error);
+        toast.error(`Failed to save resume: ${error.message}`, { id: 'save-toast' });
+    }
+  };
+
+  type PersonalInfo = ResumeData['personalInfo'];
 
   const updatePersonalInfo = (field: keyof PersonalInfo, value: string) => {
     setResumeData(prev => ({
@@ -266,11 +262,14 @@ export default function ResumeBuilder() {
   };
 
   const updateSummary = (value: string) => {
-    setResumeData(prev => ({ ...prev, summary: value }));
+    setResumeData(prev => ({
+      ...prev,
+      summary: value,
+    }));
   };
 
   const addExperience = () => {
-    const newExp: Experience = {
+    const newExp: ResumeData['experience'][0] = {
       id: `exp-${Date.now()}`,
       title: '',
       company: '',
@@ -284,7 +283,7 @@ export default function ResumeBuilder() {
     }));
   };
 
-  const updateExperience = (id: string, field: keyof Experience, value: any) => {
+  const updateExperience = (id: string, field: keyof ResumeData['experience'][0], value: any) => {
     setResumeData(prev => ({
       ...prev,
       experience: prev.experience.map(exp =>
@@ -300,21 +299,59 @@ export default function ResumeBuilder() {
     }));
   };
 
+  const addEducation = () => {
+    const newEdu: ResumeData['education'][0] = {
+      id: `edu-${Date.now()}`,
+      degree: '',
+      institution: '',
+      startDate: '',
+      endDate: '',
+      gpa: '',
+    };
+    setResumeData(prev => ({
+      ...prev,
+      education: [...prev.education, newEdu]
+    }));
+  };
+
+  const updateEducation = (id: string, field: keyof ResumeData['education'][0], value: any) => {
+    setResumeData(prev => ({
+      ...prev,
+      education: prev.education.map(edu =>
+        edu.id === id ? { ...edu, [field]: value } : edu
+      )
+    }));
+  };
+
+  const removeEducation = (id: string) => {
+    setResumeData(prev => ({
+      ...prev,
+      education: prev.education.filter(edu => edu.id !== id)
+    }));
+  };
+
+  const handleSkillsChange = (category: keyof ResumeData['skills'], value: string) => {
+    setResumeData(prevData => ({
+      ...prevData,
+      skills: {
+        ...prevData.skills,
+        [category]: value.split(',').map(s => s.trim()).filter(s => s !== ''),
+      },
+    }));
+  };
+
   const calculateCompletionPercentage = useCallback(() => {
     let completedFields = 0;
     let totalFields = 0;
 
-    // Personal info fields
     Object.values(resumeData.personalInfo).forEach(value => {
       totalFields++;
-      if (value.trim()) completedFields++;
+      if (value && String(value).trim()) completedFields++;
     });
 
-    // Summary
     totalFields++;
     if (resumeData.summary.trim()) completedFields++;
 
-    // Experience
     totalFields += resumeData.experience.length * 5;
     resumeData.experience.forEach(exp => {
       if (exp.title.trim()) completedFields++;
@@ -324,193 +361,373 @@ export default function ResumeBuilder() {
       if (exp.description.some(d => d.trim())) completedFields++;
     });
 
+    totalFields += resumeData.education.length * 5;
+    resumeData.education.forEach(edu => {
+      if (edu.degree.trim()) completedFields++;
+      if (edu.institution.trim()) completedFields++;
+      if (edu.startDate.trim()) completedFields++;
+      if (edu.endDate.trim()) completedFields++;
+      if (edu.gpa && edu.gpa.trim()) completedFields++;
+    });
+
+    totalFields += Object.values(resumeData.skills).length;
+    Object.values(resumeData.skills).forEach(skillArray => {
+      if (skillArray.length > 0 && skillArray.some(s => s.trim() !== '')) completedFields++;
+    });
+
     return totalFields > 0 ? Math.round((completedFields / totalFields) * 100) : 0;
   }, [resumeData]);
 
   const completionPercentage = calculateCompletionPercentage();
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200 px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="text-2xl font-bold text-blue-600">ResumeBuilder</div>
-            <div className="hidden md:flex items-center gap-2 bg-green-50 text-green-700 px-3 py-1 rounded-full text-sm font-medium">
-              <CheckCircle className="w-4 h-4" />
-              {completionPercentage}% Complete
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <button className="flex items-center gap-2 px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
-              <Eye className="w-4 h-4" />
-              Preview
-            </button>
-            <div className="relative">
-              <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
-                <Download className="w-4 h-4" />
-                Download PDF
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen flex flex-col font-inter bg-dark-bg-main">
+      <Header
+        onDownloadPdf={handleDownloadPdf}
+        onSelectTemplate={handleSelectTemplate}
+        onZoomChange={setZoomLevel}
+        onToggleMobileSidebar={() => setIsRightSidebarOpen(!isRightSidebarOpen)}
+        isMobileSidebarOpen={isRightSidebarOpen}
+        activeTemplate={resumeData.template}
+        showBuilderActions={true}
+        onSaveResume={handleSaveResume}
+        userName="Guest User"
+        userProfileImageUrl="https://images.unsplash.com/photo-1494790108377-be9c29b29329?q=80&w=1000&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+      />
 
-      {/* Main Content */}
-      <div className="flex-1 flex">
-        {/* Left Panel - Form */}
-        <div className="w-1/2 bg-gray-50 p-6 overflow-y-auto">
-          <div className="max-w-lg mx-auto">
-            <div className="mb-6">
-              <h1 className="text-2xl font-bold text-gray-900 mb-2">Business and management</h1>
-              <div className="flex items-center gap-2 text-sm text-gray-600">
+      <div className="flex-1 flex overflow-hidden">
+        {/* Left Panel - Editor (visible on desktop, conditionally visible on mobile) */}
+        <div className={`w-full md:w-1/2 p-10 overflow-y-auto custom-scrollbar transition-transform duration-300 ease-in-out ${activeTab === 'edit' ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} md:relative absolute inset-0`}>
+          <div className="max-w-lg mx-auto space-y-10">
+            <div className="mb-10">
+              <h1 className="text-white text-2xl font-bold font-outfit mb-3">Professional Resume Builder</h1>
+              <div className="flex items-center gap-2 text-sm text-dark-text-blue">
                 <FileText className="w-4 h-4" />
-                Resume template
+                Create Your Professional Resume
               </div>
             </div>
 
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-              <div className="flex items-start gap-3">
-                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <FileText className="w-5 h-5 text-blue-600" />
+            <div className="bg-dark-bg-card border border-dark-border-light rounded-lg p-8 mb-10">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 bg-dark-bg-medium rounded-lg flex items-center justify-center">
+                  <FileText className="w-6 h-6 text-light-button-accent" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-blue-900 mb-1">Ensure your resume fits the job opening</h3>
-                  <p className="text-sm text-blue-700">
-                    Add a job posting you're applying for and we'll show you what to optimize.
+                  <h3 className="font-semibold text-white mb-2">Tailor your resume for each opportunity</h3>
+                  <p className="text-sm text-dark-text-blue leading-relaxed">
+                    Customize your resume content to match specific job requirements and stand out.
                   </p>
                 </div>
               </div>
             </div>
 
-            {/* Personal Details */}
-            <FormSection title="Personal Details" icon={User}>
-              <div className="grid grid-cols-2 gap-4">
-                <InputField
+            <div className="bg-dark-bg-card border border-dark-border-light rounded-lg p-8 mb-10">
+              <h3 className="text-lg font-outfit font-semibold text-white mb-4">Resume Completion</h3>
+              <div className="w-full bg-dark-border-light rounded-full h-3 mb-3">
+                <div
+                  className="bg-light-button-accent h-3 rounded-full transition-all duration-500 ease-out"
+                  style={{ width: `${completionPercentage}%` }}
+                ></div>
+              </div>
+              <p className="text-sm text-dark-text-light text-center">{Math.round(completionPercentage)}% Complete</p>
+            </div>
+
+            <CollapsibleSection
+              title="Personal Details"
+              icon={User}
+              isOpen={openSections.personal}
+              onToggle={() => toggleSection('personal')}
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FloatingLabelInput
+                  id="firstName"
                   label="First Name"
+                  type="text"
                   value={resumeData.personalInfo.name.split(' ')[0] || ''}
-                  onChange={(value) => {
+                  onChange={(e) => {
                     const lastName = resumeData.personalInfo.name.split(' ').slice(1).join(' ');
-                    updatePersonalInfo('name', `${value} ${lastName}`.trim());
+                    updatePersonalInfo('name', `${e.target.value} ${lastName}`.trim());
                   }}
                   placeholder="Eric"
                 />
-                <InputField
+                <FloatingLabelInput
+                  id="lastName"
                   label="Last Name"
+                  type="text"
                   value={resumeData.personalInfo.name.split(' ').slice(1).join(' ') || ''}
-                  onChange={(value) => {
+                  onChange={(e) => {
                     const firstName = resumeData.personalInfo.name.split(' ')[0] || '';
-                    updatePersonalInfo('name', `${firstName} ${value}`.trim());
+                    updatePersonalInfo('name', `${firstName} ${e.target.value}`.trim());
                   }}
                   placeholder="Johnson"
                 />
               </div>
-              <InputField
+              <FloatingLabelInput
+                id="email"
                 label="Email"
-                value={resumeData.personalInfo.email}
-                onChange={(value) => updatePersonalInfo('email', value)}
-                placeholder="eric.johnson@example.com"
                 type="email"
+                value={resumeData.personalInfo.email}
+                onChange={(e) => updatePersonalInfo('email', e.target.value)}
+                placeholder="eric.johnson@example.com"
               />
-              <InputField
+              <FloatingLabelInput
+                id="phone"
                 label="Phone"
-                value={resumeData.personalInfo.phone}
-                onChange={(value) => updatePersonalInfo('phone', value)}
-                placeholder="+1 (555) 123-4567"
                 type="tel"
+                value={resumeData.personalInfo.phone}
+                onChange={(e) => updatePersonalInfo('phone', e.target.value)}
+                placeholder="+1 (555) 123-4567"
               />
-              <InputField
-                label="LinkedIn"
+              <FloatingLabelInput
+                id="linkedin"
+                label="LinkedIn Profile URL"
+                type="url"
                 value={resumeData.personalInfo.linkedin}
-                onChange={(value) => updatePersonalInfo('linkedin', value)}
+                onChange={(e) => updatePersonalInfo('linkedin', e.target.value)}
                 placeholder="linkedin.com/in/ericjohnson"
               />
-              <InputField
-                label="Address"
+              <FloatingLabelInput
+                id="portfolio"
+                label="Portfolio/Website URL"
+                type="url"
+                value={resumeData.personalInfo.portfolio}
+                onChange={(e) => updatePersonalInfo('portfolio', e.target.value)}
+                placeholder="ericjohnson.com"
+              />
+              <FloatingLabelInput
+                id="address"
+                label="Address (City, State)"
+                type="text"
                 value={resumeData.personalInfo.address}
-                onChange={(value) => updatePersonalInfo('address', value)}
+                onChange={(e) => updatePersonalInfo('address', e.target.value)}
                 placeholder="San Francisco, CA"
               />
-            </FormSection>
+            </CollapsibleSection>
 
-            {/* Professional Summary */}
-            <FormSection title="Professional Summary" icon={FileText}>
-              <TextAreaField
-                label="Summary"
+            <CollapsibleSection
+              title="Professional Summary"
+              icon={Award}
+              isOpen={openSections.summary}
+              onToggle={() => toggleSection('summary')}
+            >
+              <FloatingLabelInput
+                id="summary"
+                label="A brief summary of your professional goals and experience..."
                 value={resumeData.summary}
-                onChange={updateSummary}
-                placeholder="Write a brief summary of your professional background..."
+                onChange={(e) => updateSummary(e.target.value)}
+                isTextArea
                 rows={4}
               />
-            </FormSection>
+            </CollapsibleSection>
 
-            {/* Experience */}
-            <FormSection title="Work Experience" icon={Briefcase}>
+            <CollapsibleSection
+              title="Work Experience"
+              icon={Briefcase}
+              isOpen={openSections.experience}
+              onToggle={() => toggleSection('experience')}
+            >
               {resumeData.experience.map((exp, index) => (
-                <div key={exp.id} className="border border-gray-200 rounded-lg p-4 mb-4">
-                  <div className="flex justify-between items-center mb-4">
-                    <h4 className="font-medium text-gray-900">Experience {index + 1}</h4>
+                <div key={exp.id} className="border border-dark-border-light p-8 rounded-lg mb-8 bg-dark-bg-medium shadow-sm relative group hover-lift transition-all-fast">
+                  <div className="flex justify-between items-center mb-8">
+                    <h4 className="font-medium text-white">Experience {index + 1}</h4>
                     <button
                       onClick={() => removeExperience(exp.id)}
-                      className="text-red-500 hover:text-red-700"
+                      className="p-3 rounded-full bg-red-600 text-white hover:bg-red-700 transition-colors"
+                      title="Remove Experience"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="h-4 w-4" />
                     </button>
                   </div>
-                  <InputField
-                    label="Job Title"
-                    value={exp.title}
-                    onChange={(value) => updateExperience(exp.id, 'title', value)}
-                    placeholder="Senior Software Engineer"
-                  />
-                  <InputField
-                    label="Company"
-                    value={exp.company}
-                    onChange={(value) => updateExperience(exp.id, 'company', value)}
-                    placeholder="Tech Solutions Inc."
-                  />
-                  <div className="grid grid-cols-2 gap-4">
-                    <InputField
-                      label="Start Date"
-                      value={exp.startDate}
-                      onChange={(value) => updateExperience(exp.id, 'startDate', value)}
-                      placeholder="2022"
+                  <div className="space-y-5">
+                    <FloatingLabelInput
+                      id={`exp-title-${exp.id}`}
+                      label="Job Title"
+                      type="text"
+                      value={exp.title}
+                      onChange={(e) => updateExperience(exp.id, 'title', e.target.value)}
+                      placeholder="Senior Professional"
                     />
-                    <InputField
-                      label="End Date"
-                      value={exp.endDate}
-                      onChange={(value) => updateExperience(exp.id, 'endDate', value)}
-                      placeholder="Present"
+                    <FloatingLabelInput
+                      id={`exp-company-${exp.id}`}
+                      label="Company"
+                      type="text"
+                      value={exp.company}
+                      onChange={(e) => updateExperience(exp.id, 'company', e.target.value)}
+                      placeholder="Solutions Inc."
+                    />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <FloatingLabelInput
+                        id={`exp-start-${exp.id}`}
+                        label="Start Date (e.g., Jan 2022)"
+                        type="text"
+                        value={exp.startDate}
+                        onChange={(e) => updateExperience(exp.id, 'startDate', e.target.value)}
+                      />
+                      <FloatingLabelInput
+                        id={`exp-end-${exp.id}`}
+                        label="End Date (e.g., Present or Dec 2024)"
+                        type="text"
+                        value={exp.endDate}
+                        onChange={(e) => updateExperience(exp.id, 'endDate', e.target.value)}
+                      />
+                    </div>
+                    <FloatingLabelInput
+                      id={`exp-desc-${exp.id}`}
+                      label="Responsibilities (one per line, use bullet points)"
+                      value={exp.description.join('\n')}
+                      onChange={(e) => updateExperience(exp.id, 'description', e.target.value.split('\n'))}
+                      isTextArea
+                      rows={4}
+                      placeholder="• Led key projects serving customers&#10;• Improved operational efficiency by 40%"
                     />
                   </div>
-                  <TextAreaField
-                    label="Description"
-                    value={exp.description.join('\n')}
-                    onChange={(value) => updateExperience(exp.id, 'description', value.split('\n'))}
-                    placeholder="• Led development of microservices architecture&#10;• Improved application performance by 40%"
-                    rows={4}
-                  />
                 </div>
               ))}
               <button
                 onClick={addExperience}
-                className="flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium"
+                className="btn-secondary !bg-dark-bg-medium hover:!bg-dark-border-light !text-white mt-8 flex items-center rounded-full px-6 h-12 w-full justify-center"
               >
-                <Plus className="w-4 h-4" />
-                Add Experience
+                <Plus className="mr-2 h-5 w-5" /> Add New Experience
               </button>
-            </FormSection>
+            </CollapsibleSection>
+
+            <CollapsibleSection
+              title="Education"
+              icon={GraduationCap}
+              isOpen={openSections.education}
+              onToggle={() => toggleSection('education')}
+            >
+              {resumeData.education.map((edu, index) => (
+                <div key={edu.id} className="border border-dark-border-light p-8 rounded-lg mb-8 bg-dark-bg-medium shadow-sm relative group hover-lift transition-all-fast">
+                  <div className="flex justify-between items-center mb-8">
+                    <h4 className="font-medium text-white">Education {index + 1}</h4>
+                    <button
+                      onClick={() => removeEducation(edu.id)}
+                      className="p-3 rounded-full bg-red-600 text-white hover:bg-red-700 transition-colors"
+                      title="Remove Education"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <div className="space-y-5">
+                    <FloatingLabelInput
+                      id={`edu-degree-${edu.id}`}
+                      label="Degree/Field of Study"
+                      type="text"
+                      value={edu.degree}
+                      onChange={(e) => updateEducation(edu.id, 'degree', e.target.value)}
+                    />
+                    <FloatingLabelInput
+                      id={`edu-institution-${edu.id}`}
+                      label="Institution Name"
+                      type="text"
+                      value={edu.institution}
+                      onChange={(e) => updateEducation(edu.id, 'institution', e.target.value)}
+                    />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <FloatingLabelInput
+                        id={`edu-start-${edu.id}`}
+                        label="Start Date (e.g., Aug 2020)"
+                        type="text"
+                        value={edu.startDate}
+                        onChange={(e) => updateEducation(edu.id, 'startDate', e.target.value)}
+                      />
+                      <FloatingLabelInput
+                        id={`edu-end-${edu.id}`}
+                        label="End Date (e.g., May 2024)"
+                        type="text"
+                        value={edu.endDate}
+                        onChange={(e) => updateEducation(edu.id, 'endDate', e.target.value)}
+                      />
+                    </div>
+                    <FloatingLabelInput
+                      id={`edu-gpa-${edu.id}`}
+                      label="GPA (Optional)"
+                      type="text"
+                      value={edu.gpa}
+                      onChange={(e) => updateEducation(edu.id, 'gpa', e.target.value)}
+                    />
+                  </div>
+                </div>
+              ))}
+              <button
+                onClick={addEducation}
+                className="btn-secondary !bg-dark-bg-medium hover:!bg-dark-border-light !text-white mt-8 flex items-center rounded-full px-6 h-12 w-full justify-center"
+              >
+                <Plus className="mr-2 h-5 w-5" /> Add New Education
+              </button>
+            </CollapsibleSection>
+
+            <CollapsibleSection
+              title="Skills & Competencies"
+              icon={Award}
+              isOpen={openSections.skills}
+              onToggle={() => toggleSection('skills')}
+            >
+              <p className="text-sm text-dark-text-light mb-8 leading-relaxed">Enter skills comma-separated within each category.</p>
+              <div className="space-y-6">
+                <FloatingLabelInput
+                  id="skills-technical"
+                  label="Technical Skills"
+                  value={resumeData.skills.Technical.join(', ')}
+                  onChange={(e) => handleSkillsChange('Technical', e.target.value)}
+                  isTextArea
+                  rows={3}
+                  placeholder="Microsoft Office, Data Analysis, Programming Languages"
+                />
+                <FloatingLabelInput
+                  id="skills-tools"
+                  label="Tools & Software"
+                  value={resumeData.skills.Tools.join(', ')}
+                  onChange={(e) => handleSkillsChange('Tools', e.target.value)}
+                  isTextArea
+                  rows={3}
+                  placeholder="Slack, Trello, CRM Software, Analytics Tools"
+                />
+                <FloatingLabelInput
+                  id="skills-soft"
+                  label="Soft Skills & Languages"
+                  value={resumeData.skills.Soft.join(', ')}
+                  onChange={(e) => handleSkillsChange('Soft', e.target.value)}
+                  isTextArea
+                  rows={3}
+                  placeholder="Leadership, Communication, Spanish, French"
+                />
+              </div>
+            </CollapsibleSection>
           </div>
         </div>
 
-        {/* Right Panel - Preview */}
-        <div className="w-1/2 bg-white p-6 overflow-y-auto">
-          <div className="flex justify-center">
-            <div className="transform scale-75 origin-top">
-              <ResumePreview data={resumeData} />
-            </div>
+        {/* Right Panel - Preview (visible on desktop, conditionally visible on mobile) */}
+        <div className="hidden md:flex flex-col w-full md:w-1/2 p-10 overflow-y-auto custom-scrollbar items-center justify-start relative">
+          <div className="relative" style={{
+            transform: `scale(${zoomLevel})`,
+            transformOrigin: 'top center',
+            flexShrink: 0,
+          }}>
+            <ResumePreview resumeData={resumeData} activeTemplate={resumeData.template} ref={resumePreviewRef} />
           </div>
         </div>
+
+        {/* Right Sidebar (mobile view) */}
+        {isRightSidebarOpen && (
+          <div className="fixed inset-y-0 right-0 w-80 bg-dark-bg-main z-40 p-6 overflow-y-auto md:hidden">
+            <button
+              onClick={() => setIsRightSidebarOpen(false)}
+              className="absolute top-4 right-4 text-white p-2 rounded-full hover:bg-dark-bg-card"
+            >
+              <Trash2 className="h-6 w-6" />
+            </button>
+            <RightSidebar
+              resumeData={resumeData}
+              onSelectTemplate={handleSelectTemplate}
+              activeTemplate={resumeData.template}
+            />
+          </div>
+        )}
+
+        {/* Mobile Tabs */}
+        <MobileTabs activeTab={activeTab} onTabChange={setActiveTab} />
       </div>
     </div>
   );
