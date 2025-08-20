@@ -6,8 +6,8 @@ export interface CustomSection {
   id: string;
   title: string;
   content: string;
-  icon: keyof typeof iconMap; // Use a keyof a map for type safety
-}
+    icon: "FileText" | "Award" | "Settings" | "Briefcase" | "GraduationCap" | "User"
+  }
 
 // Map of icon names to components
 const iconMap = {

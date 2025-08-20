@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, ChangeEvent } from 'react';
-import { LucideIcon, Eye, EyeOff } from 'lucide-react';
+import { LucideIcon, Eye, EyeOff, User, Mail, Lock, Phone, Link, MapPin } from 'lucide-react';
 
 interface FloatingLabelInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label: string;
@@ -35,7 +35,7 @@ export default function FloatingLabelInput({
   const inputType = isPassword && showPassword ? 'text' : type;
 
   const inputClasses = `
-    peer w-full px-3 pt-6 pb-2  /* ADJUSTED: More top padding to prevent overlap */
+    peer w-full px-3 pt-6 pb-2
     bg-slate-800/50 backdrop-blur-sm border-2 rounded-xl
     text-white placeholder-transparent transition-all duration-300 outline-none
     ${isFocused || hasValue ? 'border-cyan-400 shadow-lg shadow-cyan-400/20' : 'border-slate-700'}
@@ -45,10 +45,10 @@ export default function FloatingLabelInput({
   `;
 
   const labelClasses = `
-    absolute transition-all duration-300 pointer-events-none z-10 /* ADDED: z-10 to ensure label is on top */
+    absolute transition-all duration-300 pointer-events-none z-10
     ${Icon ? 'left-11' : 'left-3'}
     ${isFocused || hasValue
-        ? 'top-2 text-xs text-cyan-400 font-medium' /* ADJUSTED: top-2 for better spacing */
+        ? 'top-2 text-xs text-cyan-400 font-medium'
         : 'top-1/2 -translate-y-1/2 text-slate-400 text-base'
     }
   `;
@@ -67,7 +67,7 @@ export default function FloatingLabelInput({
             onChange={handleInputChange}
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
-            className={`${inputClasses} ${props.height || 'min-h-36'} resize-y`}
+            className={`${inputClasses} resize-y`}
             placeholder=" "
             rows={rows}
             cols={cols}
