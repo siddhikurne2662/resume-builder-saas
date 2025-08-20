@@ -201,7 +201,7 @@ export default function RegisterPage() {
       </div>
 
       {/* Main Header */}
-      <Header userName={undefined} userProfileImageUrl={undefined} /> {/* Pass undefined as no user is logged in yet */}
+      <Header userName="" userProfileImageUrl="" /> {/* Pass empty strings as no user is logged in yet */}
 
       {/* Main Content (centered) */}
       <div className="flex-grow flex items-center justify-center p-4"> {/* Reduced padding */}
@@ -225,7 +225,6 @@ export default function RegisterPage() {
                   value={formData.name}
                   onChange={handleInputChange('name')}
                   required
-                  icon={User}
                 />
                 {errors.name && (
                   <p className="mt-1 text-sm text-red-400 flex items-center gap-1"> {/* Reduced margin */}
@@ -244,7 +243,6 @@ export default function RegisterPage() {
                   value={formData.email}
                   onChange={handleInputChange('email')}
                   required
-                  icon={Mail}
                 />
                 {errors.email && (
                   <p className="mt-1 text-sm text-red-400 flex items-center gap-1"> {/* Reduced margin */}
@@ -263,7 +261,6 @@ export default function RegisterPage() {
                   value={formData.password}
                   onChange={handleInputChange('password')}
                   required
-                  icon={Lock}
                 />
                 <PasswordStrengthIndicator password={formData.password} />
                 {errors.password && (
@@ -283,7 +280,6 @@ export default function RegisterPage() {
                   value={formData.confirmPassword}
                   onChange={handleInputChange('confirmPassword')}
                   required
-                  icon={Lock}
                 />
                 {errors.confirmPassword && (
                   <p className="mt-1 text-sm text-red-400 flex items-center gap-1"> {/* Reduced margin */}

@@ -54,7 +54,7 @@ export default function LandingPage() {
                     <button
                       className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-10 px-4 @[480px]:h-12 @[480px]:px-5 bg-blue-call-to-action text-white text-sm font-bold leading-normal tracking-[0.015em] @[480px]:text-base @[480px]:font-bold @[480px]:leading-normal @[480px]:tracking-[0.015em] w-fit hover:bg-blue-button-hover transition-colors animate-fade-in-up font-inter"
                     >
-                      <span className="truncate">Create My Free Resume</span>
+                      <span className="truncate">Create your Resume</span>
                     </button>
                   </Link>
                 </div>
@@ -72,7 +72,7 @@ export default function LandingPage() {
                     ResumeCraft offers a range of features designed to make resume building simple, intelligent, and effective.
                   </p>
                 </div>
-                <Link href="/templates" passHref>
+                <Link href="/auth/login" passHref>
                   <button
                     className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-10 px-4 @[480px]:h-12 @[480px]:px-5 bg-light-accent-button text-dark-bg-card text-sm font-bold leading-normal tracking-[0.015em] @[480px]:text-base @[480px]:font-bold @[480px]:leading-normal @[480px]:tracking-[0.015em] w-fit hover:opacity-90 transition-opacity font-inter"
                   >
@@ -101,29 +101,6 @@ export default function LandingPage() {
                   title="Save & Download"
                   description="Save your resume to your account and easily export it to PDF, ready to share with potential employers."
                 />
-              </div>
-            </div>
-
-            {/* Call to Action Section */}
-            <div className="px-4 py-10 @container">
-              <div className="flex flex-col justify-end gap-6 @[480px]:gap-8 @[480px]:px-10 @[480px]:py-20">
-                <div className="flex flex-col gap-2 text-center">
-                  <h1 className="text-white tracking-tight text-[32px] font-bold leading-tight @[480px]:text-4xl @[480px]:font-black @[480px]:leading-tight @[480px]:tracking-[-0.033em] max-w-[720px] font-outfit">
-                    Ready to Take the Next Step?
-                  </h1>
-                  <p className="text-white text-base font-normal leading-normal max-w-[720px] font-inter">Start building your professional resume today and take control of your career.</p>
-                </div>
-                <div className="flex flex-1 justify-center">
-                  <div className="flex justify-center">
-                    <Link href="/auth/register" passHref>
-                      <button
-                        className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-10 px-4 @[480px]:h-12 @[480px]:px-5 bg-blue-call-to-action text-white text-sm font-bold leading-normal tracking-[0.015em] @[480px]:text-base @[480px]:font-bold @[480px]:leading-normal @[480px]:tracking-[0.015em] grow hover:bg-blue-button-hover transition-colors font-inter"
-                      >
-                        <span className="truncate">Create My Resume</span>
-                      </button>
-                    </Link>
-                  </div>
-                </div>
               </div>
             </div>
           </div>

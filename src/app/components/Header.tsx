@@ -18,6 +18,8 @@ interface HeaderProps {
   isMobileSidebarOpen?: boolean;
   activeTemplate?: string;
   showBuilderActions?: boolean;
+  userProfileImageUrl: string;
+  userName: string;
 }
 
 export default function Header({
@@ -112,7 +114,7 @@ export default function Header({
             <Link href={user ? "/dashboard" : "/auth/login"} className="text-white text-sm font-medium hover:text-dark-text-light transition-colors font-inter">
               Dashboard
             </Link>
-            <Link href="/templates" className="text-white text-sm font-medium hover:text-dark-text-light transition-colors font-inter">
+            <Link href={user ? "/templates" : "/auth/login"} className="text-white text-sm font-medium hover:text-dark-text-light transition-colors font-inter">
               Templates
             </Link>
             <Link href={user ? "/settings" : "/auth/login"} className="text-white text-sm font-medium hover:text-dark-text-light transition-colors font-inter">

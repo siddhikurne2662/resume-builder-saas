@@ -148,7 +148,7 @@ export default function LoginPage() {
       </div>
 
       {/* Main Header */}
-      <Header userName={undefined} userProfileImageUrl={undefined} /> {/* Pass undefined as no user is logged in yet */}
+      <Header userName="" userProfileImageUrl="" /> {/* Pass empty strings as no user is logged in yet */}
 
       {/* Main Content (centered) */}
       <div className="flex-grow flex items-center justify-center p-4"> {/* Reduced padding */}
@@ -182,7 +182,6 @@ export default function LoginPage() {
                   value={formData.email}
                   onChange={handleInputChange('email')}
                   required
-                  icon={Mail}
                 />
                 {errors.email && (
                   <p className="mt-1 text-sm text-red-400 flex items-center gap-1"> {/* Reduced margin */}
@@ -201,7 +200,6 @@ export default function LoginPage() {
                   value={formData.password}
                   onChange={handleInputChange('password')}
                   required
-                  icon={Lock}
                 />
                 {errors.password && (
                   <p className="mt-1 text-sm text-red-400 flex items-center gap-1"> {/* Reduced margin */}

@@ -35,20 +35,20 @@ export default function FloatingLabelInput({
   const inputType = isPassword && showPassword ? 'text' : type;
 
   const inputClasses = `
-    peer w-full px-3 py-3  /* Adjusted from px-4 py-4 for less bulk */
+    peer w-full px-3 pt-6 pb-2  /* ADJUSTED: More top padding to prevent overlap */
     bg-slate-800/50 backdrop-blur-sm border-2 rounded-xl
     text-white placeholder-transparent transition-all duration-300 outline-none
     ${isFocused || hasValue ? 'border-cyan-400 shadow-lg shadow-cyan-400/20' : 'border-slate-700'}
     hover:border-slate-600 focus:border-cyan-400 focus:shadow-lg focus:shadow-cyan-400/20
-    ${Icon ? 'pl-11' : 'pl-3'} /* Adjusted from pl-12 for icon and pl-4 without icon */
+    ${Icon ? 'pl-11' : 'pl-3'}
     ${className || ''}
   `;
 
   const labelClasses = `
-    absolute transition-all duration-300 pointer-events-none
-    ${Icon ? 'left-11' : 'left-3'} /* Adjusted from left-12 for icon and left-4 without icon */
+    absolute transition-all duration-300 pointer-events-none z-10 /* ADDED: z-10 to ensure label is on top */
+    ${Icon ? 'left-11' : 'left-3'}
     ${isFocused || hasValue
-        ? 'top-3 text-xs text-cyan-400 font-medium' /* Adjusted from top-2 for focused label */
+        ? 'top-2 text-xs text-cyan-400 font-medium' /* ADJUSTED: top-2 for better spacing */
         : 'top-1/2 -translate-y-1/2 text-slate-400 text-base'
     }
   `;
@@ -88,14 +88,14 @@ export default function FloatingLabelInput({
         )}
 
         {Icon && (
-          <Icon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400 transition-colors duration-300 peer-focus:text-cyan-400" /> /* Adjusted from left-4 */
+          <Icon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400 transition-colors duration-300 peer-focus:text-cyan-400" />
         )}
 
         {isPassword && (
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-cyan-400 transition-colors duration-300" /* Adjusted from right-4 */
+            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-cyan-400 transition-colors duration-300"
           >
             {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
           </button>

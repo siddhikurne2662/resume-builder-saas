@@ -6,8 +6,8 @@ import Link from 'next/link';
 import Header from '../components/Header';
 import FloatingLabelInput from '../components/FloatingLabelInput';
 import { Toaster, toast } from 'react-hot-toast';
-import { UserCheck, Lock, Palette, Home, FileText, ListOrdered, Settings, ChevronDown, X } from 'lucide-react';
-import { getAuth, updateProfile, updatePassword, signOut, onAuthStateChanged } from 'firebase/auth';
+import { UserCheck, Lock, Palette, Home, FileText, ListOrdered, Settings, X } from 'lucide-react'; // Import necessary icons
+import { getAuth, updateProfile, updatePassword, signOut, onAuthStateChanged, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
@@ -18,22 +18,11 @@ export default function SettingsPage() {
   const router = useRouter();
   const [user, setUser] = useState(auth.currentUser);
   const [loadingAuth, setLoadingAuth] = useState(true);
-
-  useEffect(() => {
-    const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
-      if (!currentUser) {
-        router.push('/auth/login');
-      } else {
-        setUser(currentUser);
-        setLoadingAuth(false);
-      }
-    });
-    return () => unsubscribeAuth();
-  }, [auth, router]);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false); // NEW: State for mobile sidebar
 
   const [profile, setProfile] = useState({
-    name: user?.displayName || '',
-    email: user?.email || '',
+    name: '',
+    email: '',
     currentPassword: '',
     newPassword: '',
     confirmNewPassword: '',
@@ -45,32 +34,47 @@ export default function SettingsPage() {
     autoSave: true,
   });
 
-  // Load user profile and preferences from Firestore on component mount
   useEffect(() => {
-    if (user) {
-      const fetchUserData = async () => {
-        const userDocRef = doc(db, 'users', user.uid);
-        const docSnap = await getDoc(userDocRef);
+    const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
+      if (!currentUser) {
+        router.push('/auth/login');
+      } else {
+        setUser(currentUser);
+        setLoadingAuth(false);
 
-        if (docSnap.exists()) {
-          const userData = docSnap.data();
-          setProfile(prev => ({
-            ...prev,
-            name: userData.name || user.displayName || '',
-            email: userData.email || user.email || '',
-          }));
-          setPreferences(prev => ({
-            ...prev,
-            theme: userData.preferences?.theme || 'dark',
-            notifications: userData.preferences?.notifications !== undefined ? userData.preferences.notifications : true,
-            autoSave: userData.preferences?.autoSave !== undefined ? userData.preferences.autoSave : true,
-          }));
-        }
-      };
-      fetchUserData();
-    }
-  }, [user]);
+        const fetchUserData = async () => {
+          const userDocRef = doc(db, 'users', currentUser.uid);
+          const docSnap = await getDoc(userDocRef);
 
+          if (docSnap.exists()) {
+            const userData = docSnap.data();
+            setProfile({
+              name: userData.name || currentUser.displayName || '',
+              email: userData.email || currentUser.email || '',
+              currentPassword: '',
+              newPassword: '',
+              confirmNewPassword: '',
+            });
+            setPreferences({
+              theme: userData.preferences?.theme || 'dark',
+              notifications: userData.preferences?.notifications !== undefined ? userData.preferences.notifications : true,
+              autoSave: userData.preferences?.autoSave !== undefined ? userData.preferences.autoSave : true,
+            });
+          } else {
+            setProfile({
+              name: currentUser.displayName || '',
+              email: currentUser.email || '',
+              currentPassword: '',
+              newPassword: '',
+              confirmNewPassword: '',
+            });
+          }
+        };
+        fetchUserData();
+      }
+    });
+    return () => unsubscribeAuth();
+  }, [auth, router]);
 
   const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -91,35 +95,46 @@ export default function SettingsPage() {
       return;
     }
     try {
-      // Update display name in Firebase Auth
       if (profile.name !== user.displayName) {
         await updateProfile(user, { displayName: profile.name });
       }
 
-      // Update password if new password fields are filled
-      if (profile.newPassword && profile.newPassword === profile.confirmNewPassword) {
-        // In a real app, you'd re-authenticate the user before updating password
-        // to prevent recent login requirement errors.
+      if (profile.newPassword || profile.confirmNewPassword) {
+        if (!profile.currentPassword) {
+          toast.error("Please enter your current password to change it.");
+          return;
+        }
+        if (profile.newPassword !== profile.confirmNewPassword) {
+          toast.error("New passwords do not match.");
+          return;
+        }
+        if (profile.newPassword.length < 6) {
+          toast.error("New password must be at least 6 characters long.");
+          return;
+        }
+
+        const credential = EmailAuthProvider.credential(user.email!, profile.currentPassword);
+        await reauthenticateWithCredential(user, credential);
+
         await updatePassword(user, profile.newPassword);
         toast.success("Password updated successfully!");
-      } else if (profile.newPassword || profile.confirmNewPassword) {
-        toast.error("New passwords do not match or are incomplete.");
-        return;
+        setProfile(prev => ({ ...prev, currentPassword: '', newPassword: '', confirmNewPassword: '' }));
       }
 
-      // Save additional profile data to Firestore (like address, if added to profile state)
       const userDocRef = doc(db, 'users', user.uid);
       await setDoc(userDocRef, {
         name: profile.name,
-        email: profile.email,
       }, { merge: true });
 
       toast.success("Profile updated successfully!");
-      setProfile(prev => ({ ...prev, currentPassword: '', newPassword: '', confirmNewPassword: '' }));
 
     } catch (error: any) {
       console.error("Error updating profile:", error);
-      toast.error(`Error updating profile: ${error.message}`);
+      if (error.code === 'auth/wrong-password') {
+        toast.error("Incorrect current password.");
+      } else {
+        toast.error(`Error updating profile: ${error.message}`);
+      }
     }
   };
 
@@ -153,22 +168,30 @@ export default function SettingsPage() {
   }
 
   const currentUserName = user.displayName || user.email?.split('@')[0] || "User";
+  const currentUserProfileImage = user.photoURL || 'https://images.unsplash.com/photo-1494790108377-be9c29b29329?q=80&w=1000&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D';
 
   return (
     <div className="relative flex size-full min-h-screen flex-col bg-dark-bg-main font-inter">
       <Toaster position="bottom-right" reverseOrder={false} />
-      <Header />
+      {/* UPDATED: Pass props to Header and add toggle function */}
+      <Header
+        userName={currentUserName}
+        userProfileImageUrl={currentUserProfileImage}
+        onToggleMobileSidebar={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
+        isMobileSidebarOpen={isMobileSidebarOpen}
+      />
 
       <div className="gap-1 px-4 sm:px-6 lg:px-6 flex flex-1 justify-center py-5">
-        {/* Left Sidebar - Reusing Dashboard sidebar structure */}
-        <div className="layout-content-container flex flex-col w-80 lg:w-[280px] xl:w-[320px] bg-dark-bg-main p-4">
+        {/* Left Sidebar - Hidden on mobile, shown on md and larger screens */}
+        <div className="layout-content-container hidden md:flex flex-col w-80 lg:w-[280px] xl:w-[320px] bg-dark-bg-main p-4">
           <div className="flex h-full min-h-[700px] flex-col justify-between bg-dark-bg-main p-4">
             <div className="flex flex-col gap-4">
               <div className="flex gap-3 items-center">
                 <div
                   className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10"
-                  style={{ backgroundImage: `url("${user.photoURL || ''}")` }}
+                  style={{ backgroundImage: `url("${currentUserProfileImage}")` }}
                 ></div>
+                <h1 className="text-white text-base font-medium leading-normal font-inter">{currentUserName}</h1>
               </div>
               <div className="flex flex-col gap-2">
                 <Link href="/dashboard" className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-dark-bg-card transition-colors">
@@ -180,8 +203,8 @@ export default function SettingsPage() {
                   <p className="text-white text-sm font-medium leading-normal font-inter">My Resumes</p>
                 </Link>
                 <Link href="/templates" className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-dark-bg-card transition-colors">
-                    <ListOrdered className="text-white h-6 w-6" />
-                    <p className="text-white text-sm font-medium leading-normal font-inter">Templates</p>
+                  <ListOrdered className="text-white h-6 w-6" />
+                  <p className="text-white text-sm font-medium leading-normal font-inter">Templates</p>
                 </Link>
                 <Link href="/settings" className="flex items-center gap-3 px-3 py-2 rounded-lg bg-dark-bg-card transition-colors">
                   <Settings className="text-white h-6 w-6" />
@@ -192,12 +215,43 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        <div className="layout-content-container flex flex-col max-w-[960px] flex-1">
+        {/* Mobile Sidebar (Slide-in menu) */}
+        <div className={`fixed inset-y-0 left-0 z-50 w-80 bg-dark-bg-main transition-transform duration-300 ease-in-out md:hidden ${isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+          <div className="flex flex-col h-full p-4">
+            <div className="flex justify-between items-center mb-6">
+              <h1 className="text-xl font-bold font-outfit text-white">Menu</h1>
+              <button onClick={() => setIsMobileSidebarOpen(false)} className="p-2 rounded-full hover:bg-dark-bg-card text-white">
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            <div className="flex flex-col gap-4">
+              <Link href="/dashboard" className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-dark-bg-card transition-colors" onClick={() => setIsMobileSidebarOpen(false)}>
+                <Home className="text-white h-6 w-6" />
+                <p className="text-white text-sm font-medium leading-normal font-inter">Dashboard</p>
+              </Link>
+              <Link href="/dashboard" className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-dark-bg-card transition-colors" onClick={() => setIsMobileSidebarOpen(false)}>
+                <FileText className="text-white h-6 w-6" />
+                <p className="text-white text-sm font-medium leading-normal font-inter">My Resumes</p>
+              </Link>
+              <Link href="/templates" className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-dark-bg-card transition-colors" onClick={() => setIsMobileSidebarOpen(false)}>
+                <ListOrdered className="text-white h-6 w-6" />
+                <p className="text-white text-sm font-medium leading-normal font-inter">Templates</p>
+              </Link>
+              <Link href="/settings" className="flex items-center gap-3 px-3 py-2 rounded-lg bg-dark-bg-card transition-colors" onClick={() => setIsMobileSidebarOpen(false)}>
+                <Settings className="text-white h-6 w-6" />
+                <p className="text-white text-sm font-medium leading-normal font-inter">Settings</p>
+              </Link>
+            </div>
+          </div>
+        </div>
+        {/* Sidebar Overlay */}
+        {isMobileSidebarOpen && <div className="fixed inset-0 z-40 bg-black opacity-50 md:hidden" onClick={() => setIsMobileSidebarOpen(false)}></div>}
+
+        <div className="layout-content-container flex flex-col max-w-[960px] flex-1 w-full">
           <div className="flex flex-wrap justify-between gap-3 p-4">
             <p className="text-white text-4xl font-bold leading-tight min-w-72 font-outfit">Settings</p>
           </div>
 
-          {/* Tabs Navigation */}
           <div className="pb-3">
             <div className="flex border-b border-dark-border-light px-4 gap-8">
               <button
@@ -219,7 +273,6 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          {/* Tab Content */}
           {activeTab === 'account' && (
             <>
               <h2 className="text-white text-2xl font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5 font-outfit">Profile</h2>
