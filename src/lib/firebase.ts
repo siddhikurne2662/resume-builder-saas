@@ -3,7 +3,9 @@ import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
-const firebaseConfig = {
+// Export the Firebase configuration object.
+// Your provided environment variables should be added to your .env.local file
+export const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
   projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
@@ -13,12 +15,17 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
-// Add this line to debug:
-// console.log("Firebase Config during initialization:", firebaseConfig); // Keep commented out for production
+// We will initialize these services on the client side only.
+export let app: any;
+export let auth: any;
+export let db: any;
 
-// Initialize Firebase and EXPORT THE APP INSTANCE
-export const app = !getApps().length ? initializeApp(firebaseConfig) : getApp(); // Added 'export' to 'app'
-
-// Export Firebase services
-export const auth = getAuth(app);
-export const db = getFirestore(app);
+// A function to initialize Firebase on the client.
+// This ensures that the app is only created in the browser.
+export function initializeFirebase() {
+  if (typeof window !== 'undefined' && !getApps().length) {
+    app = initializeApp(firebaseConfig);
+    auth = getAuth(app);
+    db = getFirestore(app);
+  }
+}

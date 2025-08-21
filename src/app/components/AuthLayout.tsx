@@ -2,8 +2,10 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import { onAuthStateChanged, getAuth } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
+import { initializeFirebase, db, auth } from '@/lib/firebase';
+import LoadingSkeleton from './LoadingSkeleton';
 
 interface AuthLayoutProps {
   children: React.ReactNode;
@@ -11,10 +13,18 @@ interface AuthLayoutProps {
 
 export default function AuthLayout({ children }: AuthLayoutProps) {
   const router = useRouter();
-  const auth = getAuth();
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Initialize Firebase on the client side
+    initializeFirebase();
+
+    // Ensure auth is available before setting up the listener
+    if (!auth) {
+      console.error("Firebase Auth not initialized.");
+      return;
+    }
+
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (!user) {
         // User is not authenticated, redirect to login page
@@ -27,12 +37,14 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
 
     // Cleanup subscription on unmount
     return () => unsubscribe();
-  }, [auth, router]);
+  }, [router]);
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-dark-bg-main text-white text-lg">
-        Loading...
+      <div className="flex min-h-screen items-center justify-center bg-dark-bg-main p-8">
+        <div className="w-96 p-4 bg-dark-bg-card rounded-xl">
+          <LoadingSkeleton lines={5} />
+        </div>
       </div>
     );
   }

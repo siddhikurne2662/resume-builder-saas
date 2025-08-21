@@ -1,5 +1,6 @@
 // src/types/resume.ts
 import { FileText, Award, Briefcase, GraduationCap, User, Settings } from 'lucide-react';
+import { ReactNode } from 'react';
 
 // Custom section type
 export interface CustomSection {
@@ -32,6 +33,7 @@ export interface ResumeData {
   };
   summary: string;
   experience: {
+    address: ReactNode;
     id: string; // CORRECTED: Type is string
     title: string;
     company: string;
@@ -40,6 +42,7 @@ export interface ResumeData {
     description: string[];
   }[];
   education: {
+    address: ReactNode;
     id: string; // CORRECTED: Type is string
     degree: string;
     institution: string;

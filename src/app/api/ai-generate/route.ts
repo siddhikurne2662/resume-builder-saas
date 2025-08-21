@@ -14,12 +14,13 @@ const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
 export async function POST(request: Request) {
   try {
-    const { sectionType, context, jobDescription, resumeText } = await request.json();
+    // Correctly destructure all necessary data from the request body
+    const { sectionType, context, jobDescription, resumeText, jobTitle, experienceLevel, techSkills } = await request.json();
     let prompt = '';
 
     if (sectionType === 'ats_analysis') {
       prompt = `Analyze the following resume content and job description. Provide an ATS compatibility score, feedback, and a list of missing keywords.
-      Resume: ${context}
+      Resume: ${resumeText}
       Job Description: ${jobDescription}
 
       Response format should be a JSON object with keys: 'score' (number), 'feedback' (string), and 'missingKeywords' (string[]).`;
@@ -29,6 +30,32 @@ export async function POST(request: Request) {
        Resume Text: ${resumeText}
 
        Example response: { "suggestions": ["Change 'managment' to 'management'.", "The phrase 'I am responsible for...' should be rephrased to 'Responsible for...' to use an active verb." ] }`;
+    } else if (sectionType === 'summary') {
+      // Use dynamic context for better suggestions
+      prompt = `Using the following context, generate a professional summary for a resume.
+      Job Title: ${jobTitle}
+      Experience Level: ${experienceLevel}
+      Context: ${context}
+      Skills: ${techSkills.join(', ')}
+
+      Provide a concise, professional response formatted as a raw string.`;
+    } else if (sectionType === 'experience') {
+      // Use dynamic context for better suggestions
+      prompt = `Using the following context, generate experience bullet points for a resume.
+      Job Title: ${jobTitle}
+      Experience Level: ${experienceLevel}
+      Context: ${context}
+      Skills: ${techSkills.join(', ')}
+
+      Provide a concise, professional response formatted as a raw string with each bullet point on a new line.`;
+    } else if (sectionType === 'skill') {
+      // Use dynamic context for better suggestions
+      prompt = `Using the following context, generate a list of professional skills for a resume.
+      Job Title: ${jobTitle}
+      Experience Level: ${experienceLevel}
+      Current Skills: ${techSkills.join(', ')}
+
+      Provide a concise, professional response formatted as a comma-separated list.`;
     } else {
       prompt = `Using the following context, improve or generate content for a resume section.
       Section: ${sectionType}

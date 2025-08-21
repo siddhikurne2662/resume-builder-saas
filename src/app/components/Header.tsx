@@ -4,10 +4,10 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Download, LayoutTemplate, User, Menu, X, ZoomIn, ZoomOut, UserCheck, Settings, Save } from 'lucide-react';
-import { getAuth, signOut, type Auth, onAuthStateChanged } from 'firebase/auth'; // Added onAuthStateChanged
+import { signOut, type Auth, onAuthStateChanged } from 'firebase/auth';
 import { toast } from 'react-hot-toast';
-import { app } from '@/lib/firebase';
-import { usePathname } from 'next/navigation'; // Added usePathname
+import { initializeFirebase, auth } from '@/lib/firebase';
+import { usePathname } from 'next/navigation';
 
 interface HeaderProps {
   onDownloadPdf?: () => void;
@@ -35,33 +35,31 @@ export default function Header({
   const [isTemplateDropdownOpen, setIsTemplateDropdownOpen] = useState(false);
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
   const [currentZoom, setCurrentZoom] = useState(100);
-  const [authInstance, setAuthInstance] = useState<Auth | null>(null);
   const [user, setUser] = useState<any>(null); // State to hold the current user
   const pathname = usePathname();
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const auth = getAuth(app);
-        setAuthInstance(auth);
-        const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-          setUser(currentUser);
-        });
-        return () => unsubscribe();
-      } catch (e) {
-        console.error("Error initializing Firebase Auth in Header:", e);
-      }
+    // Initialize Firebase on the client side
+    initializeFirebase();
+
+    // Set up auth listener once Firebase is initialized
+    if (auth) {
+      const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+        setUser(currentUser);
+      });
+      return () => unsubscribe();
     }
   }, []);
 
   const templates = [
-    { name: 'Sleek Software Design', value: 'modern-minimal' },
-    { name: 'Professional Classic Layout', value: 'classic-pro' },
-    { name: 'Bold Modern Profile', value: 'creative-bold' },
-    { name: 'Clean Data-Focused', value: 'minimalist' },
-    { name: 'Structured Data Analyst', value: 'linkedin-modern' },
-    { name: 'Timeless Business Professional', value: 'linkedin-professional' },
-    { name: 'Concise Freelancer', value: 'linkedin-minimal' },
+    { name: 'Sleek Software Design', value: 'software-engineering-lead' },
+    { name: 'E-Commerce CFO', value: 'e-commerce-cfo' },
+    { name: 'Classic Professional', value: 'classic-pro-template' },
+    { name: 'Big Data Engineer', value: 'big-data-engineer-template' },
+    { name: 'Data Analyst', value: 'data-analyst-template' },
+    { name: 'Product Manager', value: 'product-manager-template' },
+    { name: 'Creative Bold Template', value: 'creative-bold-template' },
+    { name: 'Freelancer', value: 'freelancer-template' },
   ];
 
   const handleZoomIn = () => {
@@ -80,12 +78,12 @@ export default function Header({
   };
 
   const handleLogout = async () => {
-    if (!authInstance) {
+    if (!auth) {
       toast.error("Authentication not initialized.");
       return;
     }
     try {
-      await signOut(authInstance);
+      await signOut(auth);
       toast.success("Logged out successfully!");
       if (pathname === '/dashboard' || pathname === '/settings') {
         window.location.href = '/auth/login'; // Force a full page reload for protected routes
@@ -130,7 +128,7 @@ export default function Header({
                     onClick={() => setIsTemplateDropdownOpen(!isTemplateDropdownOpen)}
                     className="flex items-center px-3 py-2 bg-dark-bg-card rounded-md hover:bg-dark-border-light transition-all focus:outline-none focus:ring-2 focus:ring-dark-text-blue text-dark-text-light"
                   >
-                    <LayoutTemplate className="mr-2 h-4 w-4 text-light-button-accent" />
+                    <LayoutTemplate className="mr-2 h-4 w-4 text-light-accent-button" />
                     Templates
                   </button>
                   {isTemplateDropdownOpen && (
@@ -151,7 +149,7 @@ export default function Header({
                   )}
                 </div>
 
-                <div className="flex items-center space-x-1 bg-dark-bg-card rounded-md p-1 text-light-button-accent">
+                <div className="flex items-center space-x-1 bg-dark-bg-card rounded-md p-1 text-light-accent-button">
                   <button onClick={handleZoomOut} className="p-1 rounded-md hover:bg-dark-border-light transition-all focus:outline-none focus:ring-2 focus:ring-dark-text-blue">
                     <ZoomOut className="h-4 w-4" />
                   </button>

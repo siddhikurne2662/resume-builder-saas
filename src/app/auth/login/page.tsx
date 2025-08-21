@@ -1,17 +1,19 @@
 // src/app/auth/login/page.tsx
 'use client';
 
-import React, { useState, useEffect } from 'react'; // Import useEffect
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import FloatingLabelInput from '../../components/FloatingLabelInput';
 import Header from '../../components/Header';
 import { Mail, Lock, AlertCircle, ArrowRight, CheckCircle } from 'lucide-react';
 import { Toaster, toast } from 'react-hot-toast';
-import { getAuth, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, setPersistence, browserSessionPersistence, browserLocalPersistence } from 'firebase/auth'; // Import setPersistence, browserSessionPersistence, browserLocalPersistence
+import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, setPersistence, browserSessionPersistence, browserLocalPersistence, onAuthStateChanged } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { initializeFirebase, db, auth } from '@/lib/firebase';
+import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
+  const router = useRouter();
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -19,7 +21,22 @@ export default function LoginPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
-  const auth = getAuth();
+
+  useEffect(() => {
+    // Initialize Firebase on the client side
+    initializeFirebase();
+
+    // Check if the user is already authenticated
+    if (auth) {
+      const unsubscribe = onAuthStateChanged(auth, (user) => {
+        if (user) {
+          // If the user is logged in, redirect to the dashboard
+          router.push('/dashboard');
+        }
+      });
+      return () => unsubscribe();
+    }
+  }, [router]);
 
   // Load rememberMe preference from local storage on component mount
   useEffect(() => {
@@ -148,22 +165,22 @@ export default function LoginPage() {
       </div>
 
       {/* Main Header */}
-      <Header userName="" userProfileImageUrl="" /> {/* Pass empty strings as no user is logged in yet */}
+      <Header userName="" userProfileImageUrl="" />
 
       {/* Main Content (centered) */}
-      <div className="flex-grow flex items-center justify-center p-4"> {/* Reduced padding */}
-        <div className="w-full max-w-sm"> {/* Reduced from max-w-md to max-w-sm */}
+      <div className="flex-grow flex items-center justify-center p-4">
+        <div className="w-full max-w-sm">
           {/* Card */}
-          <div className="bg-slate-800/40 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-6 shadow-2xl"> {/* Reduced padding from p-8 to p-6 */}
+          <div className="bg-slate-800/40 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-6 shadow-2xl">
             {/* Header */}
-            <div className="text-center mb-6"> {/* Reduced margin from mb-8 to mb-6 */}
-              <h2 className="text-2xl font-bold text-white mb-2">Welcome Back!</h2> {/* Reduced from text-3xl to text-2xl */}
+            <div className="text-center mb-6">
+              <h2 className="text-2xl font-bold text-white mb-2">Welcome Back!</h2>
               <p className="text-slate-400 text-sm">Sign in to your ResumeCraft account</p>
             </div>
 
             {/* General Error */}
             {errors.general && (
-              <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl"> {/* Reduced margins and padding */}
+              <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
                 <p className="text-sm text-red-400 flex items-center gap-2">
                   <AlertCircle className="w-4 h-4" />
                   {errors.general}
@@ -172,7 +189,7 @@ export default function LoginPage() {
             )}
 
             {/* Form */}
-            <form onSubmit={handleLogin} className="space-y-4"> {/* Reduced space from space-y-6 to space-y-4 */}
+            <form onSubmit={handleLogin} className="space-y-4">
               <div>
                 <FloatingLabelInput
                   id="email"
@@ -184,7 +201,7 @@ export default function LoginPage() {
                   required
                 />
                 {errors.email && (
-                  <p className="mt-1 text-sm text-red-400 flex items-center gap-1"> {/* Reduced margin */}
+                  <p className="mt-1 text-sm text-red-400 flex items-center gap-1">
                     <AlertCircle className="w-4 h-4" />
                     {errors.email}
                   </p>
@@ -202,7 +219,7 @@ export default function LoginPage() {
                   required
                 />
                 {errors.password && (
-                  <p className="mt-1 text-sm text-red-400 flex items-center gap-1"> {/* Reduced margin */}
+                  <p className="mt-1 text-sm text-red-400 flex items-center gap-1">
                     <AlertCircle className="w-4 h-4" />
                     {errors.password}
                   </p>
@@ -228,7 +245,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-semibold rounded-xl transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg hover:shadow-cyan-500/25 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2" // Reduced padding from py-4 to py-3
+                className="w-full py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-semibold rounded-xl transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg hover:shadow-cyan-500/25 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2"
               >
                 {isLoading ? (
                   <div className="flex items-center justify-center gap-2">
@@ -245,7 +262,7 @@ export default function LoginPage() {
             </form>
 
             {/* Divider */}
-            <div className="flex items-center my-4"> {/* Reduced margin from my-6 to my-4 */}
+            <div className="flex items-center my-4">
               <div className="flex-1 h-px bg-slate-700"></div>
               <span className="px-4 text-slate-400 text-sm">or</span>
               <div className="flex-1 h-px bg-slate-700"></div>
@@ -255,7 +272,7 @@ export default function LoginPage() {
             <button
               onClick={handleGoogleLogin}
               disabled={isLoading}
-              className="w-full py-3 bg-white hover:bg-gray-50 text-gray-900 font-semibold rounded-xl transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none" // Reduced padding from py-4 to py-3
+              className="w-full py-3 bg-white hover:bg-gray-50 text-gray-900 font-semibold rounded-xl transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -267,7 +284,7 @@ export default function LoginPage() {
             </button>
 
             {/* Footer */}
-            <p className="text-center text-slate-400 mt-4 text-sm"> {/* Reduced margin and font size */}
+            <p className="text-center text-slate-400 mt-4 text-sm">
               Don't have an account?{' '}
               <Link href="/auth/register" className="text-cyan-400 hover:text-cyan-300 font-medium transition-colors duration-300">
                 Create account
@@ -276,9 +293,9 @@ export default function LoginPage() {
           </div>
 
           {/* Trust indicators */}
-          <div className="flex items-center justify-center gap-4 mt-6 text-slate-500 text-xs"> {/* Reduced gaps, margins, and font size */}
+          <div className="flex items-center justify-center gap-4 mt-6 text-slate-500 text-xs">
             <div className="flex items-center gap-1">
-              <CheckCircle className="w-3 h-3" /> {/* Reduced icon size */}
+              <CheckCircle className="w-3 h-3" />
               <span>Secure Login</span>
             </div>
             <div className="flex items-center gap-1">

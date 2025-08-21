@@ -1,12 +1,10 @@
-// src/app/builder/page.tsx
 "use client";
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
-
 import {
   Download,
-  FileText,
+  LayoutTemplate,
   User,
   Briefcase,
   GraduationCap,
@@ -23,26 +21,30 @@ import {
   Phone,
   Link as LinkIcon,
   MapPin,
-  Sparkles
+  Sparkles,
+  Save,
+  Palette,
+  ClipboardList,
+  FileText
 } from 'lucide-react';
 import ResumePreview from '../components/ResumePreview';
-import RightSidebar from '../components/RightSidebar';
 import Header from '../components/Header';
 import MobileTabs from '../components/MobileTabs';
 import { EnhancedResumeData, CustomSection, ResumeData } from '@/types/resume';
-import { toast } from 'react-hot-toast';
-import { getAuth } from 'firebase/auth';
-import { doc, setDoc, serverTimestamp, getDoc, collection } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { Toaster, toast } from 'react-hot-toast';
+import { doc, setDoc, serverTimestamp, getDoc } from 'firebase/firestore';
+import { initializeFirebase, db, auth } from '@/lib/firebase';
 import { initialResumeData } from '@/data/initialResumeData';
 import FloatingLabelInput from '../components/FloatingLabelInput';
 import { generateAiContent } from '@/lib/aiService';
 import AuthLayout from '../components/AuthLayout';
+import AtsChecker from '../components/AtsChecker';
 
-// Dynamically import html2pdf.js without assigning to a variable directly
+// Dynamically import html2pdf.js without ssr to avoid window errors
 const Html2Pdf = dynamic(() => import('html2pdf.js'), { ssr: false });
 
-const MinimalCollapsibleSection = ({
+// A sleek, collapsible section for the new UI
+const ElegantCollapsibleSection = ({
   title,
   icon: Icon,
   children,
@@ -83,10 +85,12 @@ const MinimalCollapsibleSection = ({
   };
 
   return (
-    <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl border border-slate-700/50 transition-all duration-200 hover:shadow-lg group">
-      <div className="flex items-center justify-between p-4 cursor-pointer" onClick={onToggle}>
-        <div className="flex items-center gap-3 flex-1 text-left">
-          <Icon className="w-5 h-5 text-cyan-400" />
+    <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700/50 transition-all duration-300 hover:shadow-lg group">
+      <div className="flex items-center justify-between p-5 cursor-pointer" onClick={onToggle}>
+        <div className="flex items-center gap-4 flex-1 text-left">
+          <div className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-700">
+            <Icon className="w-5 h-5 text-cyan-400" />
+          </div>
           {isEditing ? (
             <div className="flex items-center gap-2 flex-1" onClick={(e) => e.stopPropagation()}>
               <input
@@ -97,27 +101,28 @@ const MinimalCollapsibleSection = ({
                   if (e.key === 'Enter') handleRename();
                   if (e.key === 'Escape') handleCancel();
                 }}
-                className="bg-transparent border-b border-white/30 rounded-none px-0 py-1 text-sm text-white flex-1 focus:outline-none focus:border-cyan-400 transition-colors"
+                className="bg-transparent border-b border-white/30 rounded-none px-0 py-1 text-base font-medium text-white flex-1 focus:outline-none focus:border-cyan-400 transition-colors"
                 autoFocus
               />
-              <button onClick={handleRename} className="p-1 text-green-400 hover:text-green-300">
+              <button type="button" onClick={handleRename} className="p-1 text-green-400 hover:text-green-300">
                 <Check className="w-4 h-4" />
               </button>
-              <button onClick={handleCancel} className="p-1 text-red-400 hover:text-red-300">
+              <button type="button" onClick={handleCancel} className="p-1 text-red-400 hover:text-red-300">
                 <X className="w-4 h-4" />
               </button>
             </div>
           ) : (
-            <h3 className="text-base font-medium text-white">{title}</h3>
+            <h3 className="text-base font-semibold text-white">{title}</h3>
           )}
         </div>
 
         <div className="flex items-center gap-2">
           {aiSuggest && (
             <button
+              type="button"
               onClick={(e) => { e.stopPropagation(); aiSuggest(); }}
               disabled={isGenerating}
-              className="p-1 text-cyan-400 hover:text-cyan-300 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 opacity-0 group-hover:opacity-100"
+              className="p-2 text-cyan-400 hover:text-cyan-300 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 opacity-0 group-hover:opacity-100"
               title="AI Suggest"
             >
               <Sparkles className="w-4 h-4" />
@@ -125,8 +130,9 @@ const MinimalCollapsibleSection = ({
           )}
           {canRename && !isEditing && (
             <button
+              type="button"
               onClick={(e) => { e.stopPropagation(); setIsEditing(true); }}
-              className="p-1 text-gray-400 hover:text-gray-300 transition-all duration-200 opacity-0 group-hover:opacity-100"
+              className="p-2 text-gray-400 hover:text-gray-300 transition-all duration-200 opacity-0 group-hover:opacity-100"
               title="Rename section"
             >
               <Edit3 className="w-4 h-4" />
@@ -134,20 +140,21 @@ const MinimalCollapsibleSection = ({
           )}
           {canDelete && (
             <button
+              type="button"
               onClick={(e) => { e.stopPropagation(); onDelete?.(); }}
-              className="p-1 text-red-400 hover:text-red-300 transition-all duration-200 opacity-0 group-hover:opacity-100"
+              className="p-2 text-red-400 hover:text-red-300 transition-all duration-200 opacity-0 group-hover:opacity-100"
               title="Delete section"
             >
               <Trash2 className="h-4 w-4" />
             </button>
           )}
-          <div onClick={(e) => e.stopPropagation()} className="p-1 text-gray-400 hover:text-gray-300 transition-all duration-200">
+          <div onClick={(e) => e.stopPropagation()} className="p-2 text-gray-400 hover:text-gray-300 transition-all duration-200">
             {isOpen ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
           </div>
         </div>
       </div>
       {isOpen && (
-        <div className="p-4 pt-0 space-y-4">
+        <div className="px-5 pb-5 pt-0 space-y-4">
           {children}
         </div>
       )}
@@ -155,7 +162,7 @@ const MinimalCollapsibleSection = ({
   );
 };
 
-const AddSectionModal = ({ isOpen, onClose, onAdd }: { isOpen: boolean; onClose: () => void; onAdd: (title: string, icon: string) => void }) => {
+const AddSectionModal = ({ isOpen, onClose, onAdd }: { isOpen: boolean; onClose: () => void; onAdd: (title: string, icon: 'FileText' | 'Award' | 'Settings' | 'Briefcase' | 'GraduationCap' | 'User' | 'Palette' | 'ClipboardList') => void }) => {
   const [title, setTitle] = useState('');
   const [selectedIcon, setSelectedIcon] = useState('FileText');
   const iconOptions = [
@@ -165,6 +172,8 @@ const AddSectionModal = ({ isOpen, onClose, onAdd }: { isOpen: boolean; onClose:
     { name: 'Briefcase', icon: Briefcase },
     { name: 'GraduationCap', icon: GraduationCap },
     { name: 'User', icon: User },
+    { name: 'Palette', icon: Palette },
+    { name: 'ClipboardList', icon: ClipboardList },
   ];
   const handleAdd = () => {
     if (title.trim()) {
@@ -189,16 +198,18 @@ const AddSectionModal = ({ isOpen, onClose, onAdd }: { isOpen: boolean; onClose:
           />
           <div>
             <label className="block text-sm text-slate-400 font-medium mb-2">Icon</label>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-4 gap-2">
               {iconOptions.map(({ name, icon: IconComponent }) => (
                 <button
                   key={name}
+                  type="button"
                   onClick={() => setSelectedIcon(name)}
-                  className={`p-3 rounded-lg border transition-colors flex items-center justify-center ${
+                  className={`p-3 rounded-lg border transition-colors flex flex-col items-center justify-center ${
                     selectedIcon === name ? 'border-cyan-400 bg-cyan-400/20' : 'border-slate-700 hover:border-slate-600'
                   }`}
                 >
                   <IconComponent className="w-5 h-5 text-slate-400" />
+                  <span className="text-xs text-slate-400 mt-1">{name}</span>
                 </button>
               ))}
             </div>
@@ -207,6 +218,7 @@ const AddSectionModal = ({ isOpen, onClose, onAdd }: { isOpen: boolean; onClose:
         <div className="flex gap-3 mt-6">
           <button
             onClick={onClose}
+            type="button"
             className="flex-1 px-4 py-2 bg-slate-700 text-white rounded-xl hover:bg-slate-600 transition-colors"
           >
             Cancel
@@ -214,6 +226,7 @@ const AddSectionModal = ({ isOpen, onClose, onAdd }: { isOpen: boolean; onClose:
           <button
             onClick={handleAdd}
             disabled={!title.trim()}
+            type="button"
             className="flex-1 px-4 py-2 bg-cyan-500 text-white rounded-xl hover:bg-cyan-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             Add Section
@@ -233,12 +246,16 @@ export default function ResumeBuilder() {
     customSections: []
   });
   const [zoomLevel, setZoomLevel] = useState(0.75);
-  const [activeTab, setActiveTab] = useState<'edit' | 'preview'>('edit');
-  const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<'edit' | 'preview' | 'ats'>('edit');
+  const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false); // This state seems unused
   const [currentResumeId, setCurrentResumeId] = useState<string | null>(null);
-  const auth = getAuth();
-  const user = auth.currentUser;
 
+  // Initialize Firebase on the client side
+  useEffect(() => {
+    initializeFirebase();
+  }, []);
+
+  const user = auth?.currentUser;
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
   const [isGeneratingExperience, setIsGeneratingExperience] = useState<string | null>(null);
   const [isGeneratingSkills, setIsGeneratingSkills] = useState(false);
@@ -246,20 +263,21 @@ export default function ResumeBuilder() {
 
   // NEW: State to store the dynamically imported html2pdf library
   const [html2pdfInstance, setHtml2PdfInstance] = useState<any>(null);
+  const [isHtml2PdfReady, setIsHtml2PdfReady] = useState(false);
 
   useEffect(() => {
-    // Dynamically import the library here and store it in state
     import('html2pdf.js').then((module) => {
       setHtml2PdfInstance(module.default);
+      setIsHtml2PdfReady(true);
     });
   }, []);
 
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
     personal: true,
-    summary: false,
-    experience: false,
-    education: false,
-    skills: false
+    summary: true,
+    experience: true,
+    education: true,
+    skills: true
   });
 
   const toggleSection = (section: string) => {
@@ -283,6 +301,10 @@ export default function ResumeBuilder() {
       setCurrentResumeId(resumeIdFromUrl);
       const fetchResumeData = async () => {
         try {
+          if (!db) {
+            toast.error("Database not initialized. Please refresh.");
+            return;
+          }
           const resumeDocRef = doc(db, 'users', user.uid, 'resumes', resumeIdFromUrl);
           const docSnap = await getDoc(resumeDocRef);
           if (docSnap.exists()) {
@@ -312,8 +334,7 @@ export default function ResumeBuilder() {
 
   const handleDownloadPdf = async () => {
     if (resumePreviewRef.current) {
-      // UPDATED: Check if the html2pdf instance is available
-      if (!html2pdfInstance) {
+      if (!isHtml2PdfReady || !html2pdfInstance) {
         toast.error('PDF library not yet loaded. Please try again in a moment.', { id: 'pdf-toast' });
         return;
       }
@@ -344,7 +365,7 @@ export default function ResumeBuilder() {
   };
 
   const handleSaveResume = async () => {
-    if (!user) {
+    if (!user || !db) {
       toast.error("You must be logged in to save your resume.");
       router.push('/auth/login');
       return;
@@ -375,7 +396,7 @@ export default function ResumeBuilder() {
     }
   };
 
-  const addCustomSection = (title: string, icon: string) => {
+  const addCustomSection = (title: string, icon: 'FileText' | 'Award' | 'Settings' | 'Briefcase' | 'GraduationCap' | 'User' | 'Palette' | 'ClipboardList') => {
     const newSection: CustomSection = {
       id: `custom-${Date.now()}`,
       title,
@@ -448,6 +469,7 @@ export default function ResumeBuilder() {
       startDate: '',
       endDate: '',
       description: [''],
+      address: undefined
     };
     setResumeData(prev => ({ ...prev, experience: [...prev.experience, newExp] }));
   };
@@ -500,6 +522,7 @@ export default function ResumeBuilder() {
       startDate: '',
       endDate: '',
       gpa: '',
+      address: undefined
     };
     setResumeData(prev => ({ ...prev, education: [...prev.education, newEdu] }));
   };
@@ -595,7 +618,7 @@ export default function ResumeBuilder() {
   const completionPercentage = calculateCompletionPercentage();
 
   const getIconComponent = (iconName: string) => {
-    const iconMap: Record<string, React.ElementType> = { FileText, Award, Settings, Briefcase, GraduationCap, User };
+    const iconMap: Record<string, React.ElementType> = { FileText, Award, Settings, Briefcase, GraduationCap, User, Palette, ClipboardList, LinkIcon, Mail, Phone, MapPin };
     return iconMap[iconName] || FileText;
   };
 
@@ -607,21 +630,21 @@ export default function ResumeBuilder() {
     <AuthLayout>
       <div className="min-h-screen flex flex-col font-inter bg-slate-900">
         <Header
-          onDownloadPdf={handleDownloadPdf}
+          onDownloadPdf={isHtml2PdfReady ? handleDownloadPdf : undefined}
           onSelectTemplate={handleSelectTemplate}
-          onZoomChange={setZoomLevel}
+          onZoomChange={setZoomLevel} // This prop is not used in Header.tsx
           onToggleMobileSidebar={() => setIsRightSidebarOpen(!isRightSidebarOpen)}
           isMobileSidebarOpen={isRightSidebarOpen}
           activeTemplate={resumeData.template}
           showBuilderActions={true}
           userName={user.displayName || user.email?.split('@')[0] || 'User'}
           userProfileImageUrl={user.photoURL || ''}
-          onSaveResume={handleSaveResume}
+          onSaveResume={user && db ? handleSaveResume : undefined}
         />
 
-        <div className="flex-1 flex overflow-hidden">
+        <div className="flex-1 flex overflow-hidden relative">
           {/* Left Panel - Editor */}
-          <div className={`w-full md:w-[480px] p-8 overflow-y-auto custom-scrollbar bg-slate-900 transition-all duration-300 ease-in-out md:relative absolute inset-0 z-20 ${activeTab === 'edit' ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
+          <div className={`w-full md:w-[480px] p-6 overflow-y-auto custom-scrollbar bg-slate-900 transition-all duration-300 ease-in-out md:relative absolute inset-0 z-20 ${activeTab === 'edit' ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
             <div className="max-w-lg mx-auto space-y-6">
               <div className="bg-slate-800/40 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-6 shadow-2xl">
                 <h3 className="text-base font-medium text-white mb-3">Resume Completion</h3>
@@ -634,7 +657,7 @@ export default function ResumeBuilder() {
                 <p className="text-xs text-slate-400 text-center">{Math.round(completionPercentage)}% Complete</p>
               </div>
 
-              <MinimalCollapsibleSection
+              <ElegantCollapsibleSection
                 title="Personal Details"
                 icon={User}
                 isOpen={openSections.personal}
@@ -646,9 +669,9 @@ export default function ResumeBuilder() {
                 <FloatingLabelInput id="linkedin" label="LinkedIn Profile" type="url" value={resumeData.personalInfo.linkedin} onChange={(e) => updatePersonalInfo('linkedin', e.target.value)} placeholder="linkedin.com/in/ericjohnson" icon={LinkIcon} />
                 <FloatingLabelInput id="portfolio" label="Portfolio/Website" type="url" value={resumeData.personalInfo.portfolio} onChange={(e) => updatePersonalInfo('portfolio', e.target.value)} placeholder="ericjohnson.com" icon={LinkIcon} />
                 <FloatingLabelInput id="address" label="Address (City, State)" value={resumeData.personalInfo.address} onChange={(e) => updatePersonalInfo('address', e.target.value)} placeholder="San Francisco, CA" icon={MapPin} />
-              </MinimalCollapsibleSection>
+              </ElegantCollapsibleSection>
 
-              <MinimalCollapsibleSection
+              <ElegantCollapsibleSection
                 title="Professional Summary"
                 icon={Award}
                 isOpen={openSections.summary}
@@ -665,16 +688,16 @@ export default function ResumeBuilder() {
                   rows={4}
                   placeholder="A brief summary of your professional goals and experience..."
                 />
-              </MinimalCollapsibleSection>
+              </ElegantCollapsibleSection>
 
-              <MinimalCollapsibleSection
+              <ElegantCollapsibleSection
                 title="Work Experience"
                 icon={Briefcase}
                 isOpen={openSections.experience}
                 onToggle={() => toggleSection('experience')}
               >
                 {resumeData.experience.map((exp, index) => (
-                  <div key={exp.id} className="p-4 rounded-lg mb-4 bg-slate-800/50 relative group">
+                  <div key={exp.id} className="p-4 rounded-xl mb-4 bg-slate-800/50 border border-slate-700/50 relative group">
                     <div className="flex justify-between items-center mb-4">
                       <h4 className="font-medium text-white">Experience {index + 1}</h4>
                       <button
@@ -722,20 +745,20 @@ export default function ResumeBuilder() {
                 ))}
                 <button
                   onClick={addExperience}
-                  className="w-full py-3 bg-slate-700 text-white rounded-lg flex items-center justify-center gap-2 hover:bg-slate-600 transition-colors"
+                  className="w-full py-3 bg-slate-700 text-white rounded-xl flex items-center justify-center gap-2 hover:bg-slate-600 transition-colors"
                 >
                   <Plus className="h-5 w-5" /> Add Experience
                 </button>
-              </MinimalCollapsibleSection>
+              </ElegantCollapsibleSection>
 
-              <MinimalCollapsibleSection
+              <ElegantCollapsibleSection
                 title="Education"
                 icon={GraduationCap}
                 isOpen={openSections.education}
                 onToggle={() => toggleSection('education')}
               >
                 {resumeData.education.map((edu, index) => (
-                  <div key={edu.id} className="p-4 rounded-lg mb-4 bg-slate-800/50 relative group">
+                  <div key={edu.id} className="p-4 rounded-xl mb-4 bg-slate-800/50 border border-slate-700/50 relative group">
                     <div className="flex justify-between items-center mb-4">
                       <h4 className="font-medium text-white">Education {index + 1}</h4>
                       <button
@@ -757,14 +780,14 @@ export default function ResumeBuilder() {
                     </div>
                   </div>
                 ))}
-                <button onClick={addEducation} className="w-full py-3 bg-slate-700 text-white rounded-lg flex items-center justify-center gap-2 hover:bg-slate-600 transition-colors">
+                <button onClick={addEducation} className="w-full py-3 bg-slate-700 text-white rounded-xl flex items-center justify-center gap-2 hover:bg-slate-600 transition-colors">
                   <Plus className="h-5 w-5" /> Add Education
                 </button>
-              </MinimalCollapsibleSection>
+              </ElegantCollapsibleSection>
 
-              <MinimalCollapsibleSection
+              <ElegantCollapsibleSection
                 title="Skills & Competencies"
-                icon={Award}
+                icon={ClipboardList}
                 isOpen={openSections.skills}
                 onToggle={() => toggleSection('skills')}
                 aiSuggest={handleAiSuggestSkills}
@@ -800,12 +823,12 @@ export default function ResumeBuilder() {
                     placeholder="Leadership, Communication, Spanish, French"
                   />
                 </div>
-              </MinimalCollapsibleSection>
+              </ElegantCollapsibleSection>
 
               {resumeData.customSections.map((section) => {
                 const IconComponent = getIconComponent(section.icon);
                 return (
-                  <MinimalCollapsibleSection
+                  <ElegantCollapsibleSection
                     key={section.id}
                     title={section.title}
                     icon={IconComponent}
@@ -825,13 +848,13 @@ export default function ResumeBuilder() {
                       rows={4}
                       placeholder={`Add your ${section.title.toLowerCase()} details here...`}
                     />
-                  </MinimalCollapsibleSection>
+                  </ElegantCollapsibleSection>
                 );
               })}
 
               <button
                 onClick={() => setShowAddSectionModal(true)}
-                className="w-full py-3 bg-cyan-500 text-white rounded-lg flex items-center justify-center gap-2 hover:bg-cyan-600 transition-colors"
+                className="w-full py-3 bg-cyan-500 text-white rounded-xl flex items-center justify-center gap-2 hover:bg-cyan-600 transition-colors"
               >
                 <Plus className="h-5 w-5" /> Add New Section
               </button>
@@ -839,37 +862,22 @@ export default function ResumeBuilder() {
           </div>
 
           {/* Right Panel - Live Preview */}
-          <div className="flex-1 p-8 overflow-y-auto custom-scrollbar flex justify-center items-start md:relative absolute inset-0 z-10 transition-transform duration-300 ease-in-out ${activeTab === 'preview' ? 'translate-x-0' : 'translate-x-full md:translate-x-0'} bg-dark-bg-medium">
+          <div className="flex-1 p-8 overflow-y-auto custom-scrollbar flex justify-center items-start md:relative absolute inset-0 z-10 transition-transform duration-300 ease-in-out md:translate-x-0 bg-slate-900"
+            style={{ transform: activeTab === 'preview' ? 'translateX(0)' : 'translateX(100%)' }}
+          >
             <div className="relative w-[595px] flex-shrink-0" style={{ transform: `scale(${zoomLevel})`, transformOrigin: 'top center' }}>
               <ResumePreview resumeData={resumeData} activeTemplate={resumeData.template} ref={resumePreviewRef} />
             </div>
           </div>
-
-          {/* Right Sidebar (mobile view) */}
-          {isRightSidebarOpen && (
-            <div className="fixed inset-y-0 right-0 w-80 bg-slate-900 z-40 p-6 overflow-y-auto md:hidden">
-              <button onClick={() => setIsRightSidebarOpen(false)} className="absolute top-4 right-4 text-white p-2 rounded-full hover:bg-slate-800">
-                <X className="h-6 w-6" />
-              </button>
-              <RightSidebar
-                resumeData={resumeData}
-                onSelectTemplate={handleSelectTemplate}
-                activeTemplate={resumeData.template}
-              />
-            </div>
-          )}
-
-          {/* Mobile Tabs */}
-          <MobileTabs activeTab={activeTab} onTabChange={setActiveTab} />
         </div>
-
-        {/* Add Section Modal */}
-        <AddSectionModal
-          isOpen={showAddSectionModal}
-          onClose={() => setShowAddSectionModal(false)}
-          onAdd={addCustomSection}
-        />
       </div>
+      <MobileTabs activeTab={activeTab} onTabChange={setActiveTab} />
+      {/* Add Section Modal */}
+      <AddSectionModal
+        isOpen={showAddSectionModal}
+        onClose={() => setShowAddSectionModal(false)}
+        onAdd={addCustomSection}
+      />
     </AuthLayout>
   );
 }

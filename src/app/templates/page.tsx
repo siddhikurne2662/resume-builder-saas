@@ -30,14 +30,14 @@ export default function TemplatesPage() {
   const currentUserProfileImage = user?.photoURL;
 
   const allTemplates = [
-    { name: 'Modern Two-Column', value: 'modern-minimal', imageUrl: '/images/imgi_5_software-engineering-lead.png' },
-    { name: 'Classic Professional', value: 'classic-pro', imageUrl: '/images/imgi_1_financial-data-analyst.png' },
-    { name: 'Elegant Two-Column', value: 'creative-bold', imageUrl: '/images/imgi_11_marketing-manager.png' },
-    { name: 'Streamlined Single-Column', value: 'minimalist', imageUrl: '/images/imgi_9_big-data-engineer.png' },
-    { name: 'Functional Single-Column', value: 'linkedin-modern', imageUrl: '/images/imgi_12_data-analyst.png' },
-    { name: 'Executive Modern', value: 'linkedin-professional', imageUrl: '/images/imgi_10_e-commerce-chief-financial-officer.png' },
-    { name: 'Minimalist Classic', value: 'linkedin-minimal', imageUrl: '/images/imgi_22_freelance-v1.png' },
-    { name: 'Timeless Business Professional', value: 'linkedin-professional', imageUrl: '/images/imgi_14_core-template-business-analyst.png' },
+    { name: 'Software Engineering Lead', value: 'software-engineering-lead', imageUrl: '/images/imgi_5_software-engineering-lead.png' },
+    { name: 'E-Commerce CFO', value: 'e-commerce-cfo', imageUrl: '/images/imgi_10_e-commerce-chief-financial-officer.png' },
+    { name: 'Classic Professional', value: 'classic-pro-template', imageUrl: '/images/imgi_1_financial-data-analyst.png' },
+    { name: 'Big Data Engineer', value: 'big-data-engineer-template', imageUrl: '/images/imgi_9_big-data-engineer.png' },
+    { name: 'Data Analyst', value: 'data-analyst-template', imageUrl: '/images/imgi_12_data-analyst.png' },
+    { name: 'Product Manager', value: 'product-manager-template', imageUrl: '/images/imgi_14_core-template-business-analyst.png' },
+    { name: 'Creative Bold Template', value: 'creative-bold-template', imageUrl: '/images/imgi_11_marketing-manager.png' },
+    { name: 'Freelancer', value: 'freelancer-template', imageUrl: '/images/imgi_22_freelance-v1.png' },
   ];
 
   if (loadingAuth) {
