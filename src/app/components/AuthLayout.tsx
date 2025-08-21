@@ -22,6 +22,8 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
     // Ensure auth is available before setting up the listener
     if (!auth) {
       console.error("Firebase Auth not initialized.");
+      // In a real app, you might want to show an error message or retry
+      setLoading(false);
       return;
     }
 

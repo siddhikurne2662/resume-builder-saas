@@ -58,7 +58,6 @@ export default function Header({
     { name: 'Big Data Engineer', value: 'big-data-engineer-template' },
     { name: 'Data Analyst', value: 'data-analyst-template' },
     { name: 'Product Manager', value: 'product-manager-template' },
-    { name: 'Creative Bold Template', value: 'creative-bold-template' },
     { name: 'Freelancer', value: 'freelancer-template' },
   ];
 

@@ -28,7 +28,7 @@ import {
   ClipboardList,
   FileText
 } from 'lucide-react';
-import ResumePreview from '../components/ResumePreview';
+import ResumePreview, { PAPER_SIZES, PaperSize } from '../components/ResumePreview';
 import Header from '../components/Header';
 import MobileTabs from '../components/MobileTabs';
 import { EnhancedResumeData, CustomSection, ResumeData } from '@/types/resume';
@@ -238,6 +238,31 @@ const AddSectionModal = ({ isOpen, onClose, onAdd }: { isOpen: boolean; onClose:
   );
 };
 
+// Paper Size Selector Component
+const PaperSizeSelector = ({ paperSize, setPaperSize }: { paperSize: PaperSize, setPaperSize: React.Dispatch<React.SetStateAction<PaperSize>> }) => (
+  <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-4">
+    <h3 className="text-sm font-medium text-white mb-3">Paper Size</h3>
+    <div className="space-y-2">
+      {Object.entries(PAPER_SIZES).map(([key, config]) => (
+        <label key={key} className="flex items-center gap-3 cursor-pointer">
+          <input
+            type="radio"
+            name="paperSize"
+            value={key}
+            checked={paperSize === key}
+            onChange={(e) => setPaperSize(e.target.value as PaperSize)}
+            className="w-4 h-4 text-cyan-500 border-slate-600 focus:ring-cyan-500 bg-slate-700"
+          />
+          <span className="text-sm text-white">{config.name}</span>
+          <span className="text-xs text-slate-400">
+            {config.widthIn} × {config.heightIn} inches
+          </span>
+        </label>
+      ))}
+    </div>
+  </div>
+);
+
 export default function ResumeBuilder() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -250,6 +275,7 @@ export default function ResumeBuilder() {
   const [activeTab, setActiveTab] = useState<'edit' | 'preview' | 'ats'>('edit');
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false);
   const [currentResumeId, setCurrentResumeId] = useState<string | null>(null);
+  const [paperSize, setPaperSize] = useState<PaperSize>('US_LETTER');
 
   useEffect(() => {
     initializeFirebase();
@@ -261,6 +287,7 @@ export default function ResumeBuilder() {
   const [isGeneratingSkills, setIsGeneratingSkills] = useState(false);
   const [showAddSectionModal, setShowAddSectionModal] = useState(false);
 
+  // Correctly define and scope the html2pdf state setter
   const [html2pdfInstance, setHtml2PdfInstance] = useState<any>(null);
   const [isHtml2PdfReady, setIsHtml2PdfReady] = useState(false);
 
@@ -273,10 +300,10 @@ export default function ResumeBuilder() {
 
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
     personal: true,
-    summary: true,
-    experience: true,
-    education: true,
-    skills: true
+    summary: false,
+    experience: false,
+    education: false,
+    skills: false
   });
 
   const toggleSection = (section: string) => {
@@ -332,33 +359,95 @@ export default function ResumeBuilder() {
   }, []);
 
   const handleDownloadPdf = async () => {
-    if (resumePreviewRef.current) {
-      if (!isHtml2PdfReady || !html2pdfInstance) {
-        toast.error('PDF library not yet loaded. Please try again in a moment.', { id: 'pdf-toast' });
-        return;
-      }
-      toast.loading('Generating PDF...', { id: 'pdf-toast' });
-      const element = resumePreviewRef.current;
-      const originalZoom = zoomLevel;
-      setZoomLevel(1);
-      await new Promise(resolve => setTimeout(resolve, 100));
-      const pdf = await html2pdfInstance().from(element).set({
+    if (!resumePreviewRef.current) {
+      toast.error('Resume preview not found. Please try again.', { id: 'pdf-toast' });
+      return;
+    }
+    if (!isHtml2PdfReady || !html2pdfInstance) {
+      toast.error('PDF library not yet loaded. Please try again in a moment.', { id: 'pdf-toast' });
+      return;
+    }
+
+    toast.loading('Generating PDF...', { id: 'pdf-toast' });
+
+    const element = resumePreviewRef.current;
+    const currentPaperConfig = PAPER_SIZES[paperSize];
+    const originalZoom = zoomLevel;
+    setZoomLevel(1);
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    try {
+      const clonedElement = element.cloneNode(true) as HTMLElement;
+
+      // Apply PDF-specific styles to cloned element
+      clonedElement.style.position = 'absolute';
+      clonedElement.style.top = '-9999px';
+      clonedElement.style.left = '0';
+      clonedElement.style.width = `${currentPaperConfig.widthIn}in`;
+      clonedElement.style.minHeight = `${currentPaperConfig.heightIn}in`;
+      clonedElement.style.backgroundColor = '#ffffff';
+      clonedElement.style.color = '#000000';
+      clonedElement.style.transform = 'none';
+      clonedElement.style.boxShadow = 'none';
+      clonedElement.style.borderRadius = '0';
+      clonedElement.style.overflow = 'visible';
+      clonedElement.style.zIndex = '1000';
+
+      // Force all text to be black for PDF
+      const allTextElements = clonedElement.querySelectorAll('*');
+      allTextElements.forEach((el) => {
+        const htmlEl = el as HTMLElement;
+        htmlEl.style.color = '#000000';
+        htmlEl.style.backgroundColor = 'transparent';
+        htmlEl.style.opacity = '1';
+        htmlEl.style.visibility = 'visible';
+        htmlEl.style.display = htmlEl.style.display === 'none' ? 'block' : htmlEl.style.display;
+      });
+
+      document.body.appendChild(clonedElement);
+
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      const options = {
         margin: [0.5, 0.5, 0.5, 0.5],
-        filename: `${resumeData.personalInfo.name.replace(/\s/g, '_')}_Resume.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
+        filename: `${resumeData.personalInfo.name.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '') || 'Resume'}.pdf`,
+        image: {
+          type: 'jpeg',
+          quality: 0.98
+        },
         html2canvas: {
-          scale: 4,
+          scale: 2,
           useCORS: true,
           logging: false,
           allowTaint: true,
           scrollX: 0,
           scrollY: 0,
-          windowWidth: element.scrollWidth,
-          windowHeight: element.scrollHeight,
+          width: currentPaperConfig.widthPx,
+          height: currentPaperConfig.heightPx,
+          letterRendering: true,
+          backgroundColor: '#ffffff'
         },
-        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
-      }).save();
+        jsPDF: {
+          unit: 'pt',
+          format: paperSize === 'A4' ? 'a4' : 'letter',
+          orientation: 'portrait',
+          compress: true
+        },
+        pagebreak: {
+          mode: ['avoid-all', 'css', 'legacy'],
+          before: '.page-break-before',
+          after: '.page-break-after'
+        }
+      };
+
+      await html2pdfInstance().from(clonedElement).set(options).save();
+
+      document.body.removeChild(clonedElement);
       toast.success('PDF downloaded successfully!', { id: 'pdf-toast' });
+    } catch (error) {
+      console.error('PDF generation error:', error);
+      toast.error('Failed to generate PDF. Please try again.', { id: 'pdf-toast' });
+    } finally {
       setZoomLevel(originalZoom);
     }
   };
@@ -827,6 +916,8 @@ export default function ResumeBuilder() {
                 </div>
               </ElegantCollapsibleSection>
 
+              <PaperSizeSelector paperSize={paperSize} setPaperSize={setPaperSize} />
+
               {resumeData.customSections.map((section) => {
                 const IconComponent = getIconComponent(section.icon);
                 return (
@@ -864,9 +955,22 @@ export default function ResumeBuilder() {
           </div>
 
           {/* Right Panel - Live Preview */}
-          <div className={`flex-1 p-8 overflow-y-auto custom-scrollbar bg-slate-900 md:relative absolute inset-0 z-10 transition-transform duration-300 ease-in-out md:translate-x-0 ${activeTab === 'preview' ? 'translate-x-0' : 'translate-x-full'}`}>
-            <div className="relative w-[595px] flex-shrink-0" style={{ transform: `scale(${zoomLevel})`, transformOrigin: 'top center' }}>
-              <ResumePreview resumeData={resumeData} activeTemplate={resumeData.template} ref={resumePreviewRef} />
+          <div className={`flex-1 p-8 overflow-y-auto custom-scrollbar md:relative absolute inset-0 z-10 transition-transform duration-300 ease-in-out md:translate-x-0 ${activeTab === 'preview' ? 'translate-x-0' : 'translate-x-full'}`}>
+            <div className="sticky top-8 w-full flex justify-center">
+              <div
+                className="relative transition-all duration-300 ease-in-out"
+                style={{
+                  transform: `scale(${zoomLevel})`,
+                  transformOrigin: 'top center'
+                }}
+              >
+                <ResumePreview
+                  resumeData={resumeData}
+                  activeTemplate={resumeData.template}
+                  paperSize={paperSize}
+                  ref={resumePreviewRef}
+                />
+              </div>
             </div>
           </div>
         </div>

@@ -1,3 +1,4 @@
+// Updated BigDataEngineerTemplate with smaller text sizes
 // src/app/builder/BigDataEngineerTemplate.tsx
 import React from 'react';
 import { EnhancedResumeData } from '@/types/resume';
@@ -7,47 +8,51 @@ interface BigDataEngineerTemplateProps {
 }
 
 const SectionTitle = ({ children }: { children: React.ReactNode }) => (
-  <h2 className="text-lg font-bold border-b-2 border-black mb-3 pb-1 uppercase tracking-wider">{children}</h2>
+  <h2 className="text-sm font-bold border-b-2 border-black mb-2 pb-1 uppercase tracking-wider text-black print:text-black break-inside-avoid">
+    {children}
+  </h2>
 );
 
 const BigDataEngineerTemplate: React.FC<BigDataEngineerTemplateProps> = ({ resumeData }) => {
   const { personalInfo, summary, experience, education, skills, customSections } = resumeData;
 
   const renderContactInfo = () => (
-    <div className="text-center mb-8">
-      <h1 className="text-3xl font-bold tracking-wider mb-2">{personalInfo.name}</h1>
-      <p className="text-sm text-gray-600">
-        {personalInfo.address} • {personalInfo.phone} • {personalInfo.email} • {personalInfo.linkedin}
+    <div className="text-center mb-6 print:mb-4 break-inside-avoid">
+      <h1 className="text-xl font-bold tracking-wider mb-2 text-black print:text-black print:text-lg">{personalInfo.name}</h1>
+      <p className="text-xs text-black print:text-black">
+        {[personalInfo.address, personalInfo.phone, personalInfo.email, personalInfo.linkedin]
+          .filter(Boolean)
+          .join(' • ')}
       </p>
     </div>
   );
 
   const renderSummary = () => (
-    <div className="mb-8">
+    <div className="mb-6 print:mb-4 break-inside-avoid">
       <SectionTitle>Summary</SectionTitle>
-      <p className="text-sm leading-relaxed">
+      <p className="text-xs leading-relaxed text-black print:text-black">
         {summary}
       </p>
     </div>
   );
 
   const renderExperience = () => (
-    <div className="mb-8">
+    <div className="mb-6 print:mb-4 break-inside-avoid">
       <SectionTitle>Professional Experience</SectionTitle>
       {experience.map((exp, index) => (
-        <div key={exp.id || index} className="mb-6">
-          <div className="flex justify-between items-start mb-2">
-            <div>
-              <h3 className="font-bold text-sm">{exp.company}, {exp.address}</h3>
-              <h4 className="font-bold text-sm">{exp.title}</h4>
+        <div key={exp.id || index} className="mb-4 break-inside-avoid">
+          <div className="flex justify-between items-start mb-1">
+            <div className="flex-1 pr-2">
+              <h3 className="font-bold text-xs text-black print:text-black">{exp.company}{exp.address ? `, ${exp.address}` : ''}</h3>
+              <h4 className="font-bold text-xs text-black print:text-black">{exp.title}</h4>
             </div>
-            <div className="text-sm text-right">
+            <div className="text-xs text-black print:text-black text-right whitespace-nowrap">
               {exp.startDate} – {exp.endDate}
             </div>
           </div>
-          <ul className="list-disc list-inside ml-4 space-y-1">
+          <ul className="list-disc list-inside ml-3 space-y-0.5 text-black print:text-black">
             {exp.description.map((bullet, respIndex) => (
-              <li key={respIndex} className="text-sm leading-relaxed">{bullet}</li>
+              <li key={respIndex} className="text-xs leading-tight">{bullet}</li>
             ))}
           </ul>
         </div>
@@ -56,36 +61,40 @@ const BigDataEngineerTemplate: React.FC<BigDataEngineerTemplateProps> = ({ resum
   );
 
   const renderEducation = () => (
-    <div className="mb-8">
+    <div className="mb-6 print:mb-4 break-inside-avoid">
       <SectionTitle>Education</SectionTitle>
       {education.map((edu, index) => (
-        <div key={edu.id || index} className="mb-4">
-          <div className="flex justify-between items-start mb-2">
-            <div>
-              <h3 className="font-bold text-sm">{edu.institution}, {edu.address}</h3>
-              <p className="text-sm">{edu.degree}</p>
+        <div key={edu.id || index} className="mb-3 break-inside-avoid">
+          <div className="flex justify-between items-start mb-1">
+            <div className="flex-1 pr-2">
+              <h3 className="font-bold text-xs text-black print:text-black">{edu.institution}{edu.address ? `, ${edu.address}` : ''}</h3>
+              <p className="text-xs text-black print:text-black">{edu.degree}</p>
             </div>
-            <div className="text-sm">
+            <div className="text-xs text-black print:text-black text-right whitespace-nowrap">
               {edu.endDate}
             </div>
           </div>
-          <ul className="list-disc list-inside ml-4 space-y-1">
-            {edu.gpa && <li className="text-sm">{`GPA: ${edu.gpa}`}</li>}
-          </ul>
+          {edu.gpa && (
+            <ul className="list-disc list-inside ml-3 space-y-0.5 text-black print:text-black">
+              <li className="text-xs">GPA: {edu.gpa}</li>
+            </ul>
+          )}
         </div>
       ))}
     </div>
   );
 
   const renderSkills = () => (
-    <div>
+    <div className="mb-6 break-inside-avoid">
       <SectionTitle>Skills & Other</SectionTitle>
-      <div className="space-y-2 text-sm">
+      <div className="space-y-1 text-xs text-black print:text-black">
         {Object.entries(skills).map(([category, skillList]) => (
-          <div key={category}>
-            <span className="font-bold capitalize">{category.replace(/([A-Z])/g, ' $1')}: </span>
-            {skillList.join(', ')}
-          </div>
+          skillList && skillList.length > 0 && (
+            <div key={category}>
+              <span className="font-bold capitalize">{category.replace(/([A-Z])/g, ' $1')}: </span>
+              {skillList.join(', ')}
+            </div>
+          )
         ))}
       </div>
     </div>
@@ -94,16 +103,48 @@ const BigDataEngineerTemplate: React.FC<BigDataEngineerTemplateProps> = ({ resum
   const renderCustomSections = () => (
     <>
       {customSections?.map((section) => (
-        <div key={section.id} className="mb-6">
-          <SectionTitle>{section.title}</SectionTitle>
-          <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-wrap">{section.content}</p>
+        <div key={section.id} className="mb-6 break-inside-avoid">
+          <h2 className="text-sm font-bold border-b-2 border-black mb-2 pb-1 uppercase tracking-wider text-black print:text-black">
+            {section.title}
+          </h2>
+          <div className="text-xs leading-relaxed text-black print:text-black">
+            {section.content.split('\n').map((line, index) => {
+              const trimmedLine = line.trim();
+              if (!trimmedLine) return <br key={index} />;
+
+              // Handle "winner 2025" type entries
+              if (trimmedLine.match(/^(winner|achieved|completed|finalist|placed|awarded)\s+\d{4}/i)) {
+                return (
+                  <div key={index} className="ml-3">
+                    <span className="font-medium">{trimmedLine}</span>
+                  </div>
+                );
+              }
+
+              // Handle bullet points
+              if (trimmedLine.startsWith('•') || trimmedLine.startsWith('-')) {
+                return (
+                  <div key={index} className="ml-3 mb-0.5">
+                    <span>• {trimmedLine.replace(/^[•\-]\s*/, '')}</span>
+                  </div>
+                );
+              }
+
+              // Regular text
+              return (
+                <div key={index} className="mb-0.5">
+                  {trimmedLine}
+                </div>
+              );
+            })}
+          </div>
         </div>
       ))}
     </>
   );
 
   return (
-    <div className="max-w-4xl mx-auto bg-white p-8 font-serif">
+    <div className="max-w-4xl mx-auto bg-white p-6 font-serif text-black print:p-8">
       {renderContactInfo()}
       {summary && renderSummary()}
       {experience.length > 0 && renderExperience()}
