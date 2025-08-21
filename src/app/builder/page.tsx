@@ -1,3 +1,4 @@
+// src/app/builder/page.tsx
 "use client";
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
@@ -32,7 +33,7 @@ import Header from '../components/Header';
 import MobileTabs from '../components/MobileTabs';
 import { EnhancedResumeData, CustomSection, ResumeData } from '@/types/resume';
 import { Toaster, toast } from 'react-hot-toast';
-import { doc, setDoc, serverTimestamp, getDoc } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp, getDoc, collection } from 'firebase/firestore';
 import { initializeFirebase, db, auth } from '@/lib/firebase';
 import { initialResumeData } from '@/data/initialResumeData';
 import FloatingLabelInput from '../components/FloatingLabelInput';
@@ -148,9 +149,9 @@ const ElegantCollapsibleSection = ({
               <Trash2 className="h-4 w-4" />
             </button>
           )}
-          <div onClick={(e) => e.stopPropagation()} className="p-2 text-gray-400 hover:text-gray-300 transition-all duration-200">
+          <button onClick={onToggle} className="p-2 text-gray-400 hover:text-gray-300 transition-all duration-200">
             {isOpen ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
-          </div>
+          </button>
         </div>
       </div>
       {isOpen && (
@@ -164,7 +165,7 @@ const ElegantCollapsibleSection = ({
 
 const AddSectionModal = ({ isOpen, onClose, onAdd }: { isOpen: boolean; onClose: () => void; onAdd: (title: string, icon: 'FileText' | 'Award' | 'Settings' | 'Briefcase' | 'GraduationCap' | 'User' | 'Palette' | 'ClipboardList') => void }) => {
   const [title, setTitle] = useState('');
-  const [selectedIcon, setSelectedIcon] = useState('FileText');
+  const [selectedIcon, setSelectedIcon] = useState<'FileText' | 'Award' | 'Settings' | 'Briefcase' | 'GraduationCap' | 'User' | 'Palette' | 'ClipboardList'>('FileText');
   const iconOptions = [
     { name: 'FileText', icon: FileText },
     { name: 'Award', icon: Award },
@@ -174,7 +175,7 @@ const AddSectionModal = ({ isOpen, onClose, onAdd }: { isOpen: boolean; onClose:
     { name: 'User', icon: User },
     { name: 'Palette', icon: Palette },
     { name: 'ClipboardList', icon: ClipboardList },
-  ];
+  ] as const;
   const handleAdd = () => {
     if (title.trim()) {
       onAdd(title.trim(), selectedIcon);
@@ -247,10 +248,9 @@ export default function ResumeBuilder() {
   });
   const [zoomLevel, setZoomLevel] = useState(0.75);
   const [activeTab, setActiveTab] = useState<'edit' | 'preview' | 'ats'>('edit');
-  const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false); // This state seems unused
+  const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false);
   const [currentResumeId, setCurrentResumeId] = useState<string | null>(null);
 
-  // Initialize Firebase on the client side
   useEffect(() => {
     initializeFirebase();
   }, []);
@@ -261,13 +261,12 @@ export default function ResumeBuilder() {
   const [isGeneratingSkills, setIsGeneratingSkills] = useState(false);
   const [showAddSectionModal, setShowAddSectionModal] = useState(false);
 
-  // NEW: State to store the dynamically imported html2pdf library
   const [html2pdfInstance, setHtml2PdfInstance] = useState<any>(null);
   const [isHtml2PdfReady, setIsHtml2PdfReady] = useState(false);
 
   useEffect(() => {
     import('html2pdf.js').then((module) => {
-      setHtml2PdfInstance(module.default);
+      setHtml2PdfInstance(() => module.default);
       setIsHtml2PdfReady(true);
     });
   }, []);
@@ -376,6 +375,8 @@ export default function ResumeBuilder() {
       const resumeToSave = {
         ...resumeData,
         title: resumeTitle,
+        experience: resumeData.experience.map(({ address, ...rest }) => rest),
+        education: resumeData.education.map(({ address, ...rest }) => rest),
         lastUpdated: serverTimestamp(),
       };
       let resumeDocRef;
@@ -383,12 +384,13 @@ export default function ResumeBuilder() {
         resumeDocRef = doc(db, 'users', user.uid, 'resumes', currentResumeId);
         await setDoc(resumeDocRef, resumeToSave, { merge: true });
         toast.success('Resume updated successfully!', { id: 'save-toast' });
+        router.push('/dashboard');
       } else {
-        const newDocRef = doc(db, 'users', user.uid, 'resumes');
-        await setDoc(newDocRef, { ...resumeToSave, createdAt: serverTimestamp() });
-        setCurrentResumeId(newDocRef.id);
+        resumeDocRef = doc(collection(db, 'users', user.uid, 'resumes'));
+        await setDoc(resumeDocRef, { ...resumeToSave, createdAt: serverTimestamp() });
+        setCurrentResumeId(resumeDocRef.id);
         toast.success('Resume saved successfully!', { id: 'save-toast' });
-        router.push(`/builder?resumeId=${newDocRef.id}&template=${resumeData.template}`);
+        router.push('/dashboard');
       }
     } catch (error: any) {
       console.error('Error saving resume:', error);
@@ -632,7 +634,7 @@ export default function ResumeBuilder() {
         <Header
           onDownloadPdf={isHtml2PdfReady ? handleDownloadPdf : undefined}
           onSelectTemplate={handleSelectTemplate}
-          onZoomChange={setZoomLevel} // This prop is not used in Header.tsx
+          onZoomChange={setZoomLevel}
           onToggleMobileSidebar={() => setIsRightSidebarOpen(!isRightSidebarOpen)}
           isMobileSidebarOpen={isRightSidebarOpen}
           activeTemplate={resumeData.template}
@@ -862,16 +864,16 @@ export default function ResumeBuilder() {
           </div>
 
           {/* Right Panel - Live Preview */}
-          <div className="flex-1 p-8 overflow-y-auto custom-scrollbar flex justify-center items-start md:relative absolute inset-0 z-10 transition-transform duration-300 ease-in-out md:translate-x-0 bg-slate-900"
-            style={{ transform: activeTab === 'preview' ? 'translateX(0)' : 'translateX(100%)' }}
-          >
+          <div className={`flex-1 p-8 overflow-y-auto custom-scrollbar bg-slate-900 md:relative absolute inset-0 z-10 transition-transform duration-300 ease-in-out md:translate-x-0 ${activeTab === 'preview' ? 'translate-x-0' : 'translate-x-full'}`}>
             <div className="relative w-[595px] flex-shrink-0" style={{ transform: `scale(${zoomLevel})`, transformOrigin: 'top center' }}>
               <ResumePreview resumeData={resumeData} activeTemplate={resumeData.template} ref={resumePreviewRef} />
             </div>
           </div>
         </div>
       </div>
-      <MobileTabs activeTab={activeTab} onTabChange={setActiveTab} />
+      {(activeTab === 'edit' || activeTab === 'preview') && (
+        <MobileTabs activeTab={activeTab} onTabChange={setActiveTab} />
+      )}
       {/* Add Section Modal */}
       <AddSectionModal
         isOpen={showAddSectionModal}

@@ -2,7 +2,7 @@
 import { ResumeData } from '@/types/resume';
 
 export const initialResumeData: ResumeData = {
-  template: 'modern-minimal',
+  template: 'classic-pro-template',
   personalInfo: {
     name: 'Eric Johnson',
     email: 'eric.johnson@example.com',
@@ -24,6 +24,7 @@ export const initialResumeData: ResumeData = {
         'Improved operational efficiency by 40% through process optimization',
         'Mentored junior team members and conducted performance reviews'
       ],
+      address: undefined
     },
     {
       id: 'exp-2',
@@ -36,6 +37,7 @@ export const initialResumeData: ResumeData = {
         'Collaborated with cross-functional teams to achieve targets',
         'Reduced errors by 35% through comprehensive quality control'
       ],
+      address: undefined
     },
   ],
   education: [
@@ -46,6 +48,7 @@ export const initialResumeData: ResumeData = {
       startDate: '2016',
       endDate: '2020',
       gpa: '3.8/4.0',
+      address: undefined
     },
   ],
   skills: {

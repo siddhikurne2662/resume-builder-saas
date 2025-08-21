@@ -1,5 +1,5 @@
 // src/types/resume.ts
-import { FileText, Award, Briefcase, GraduationCap, User, Settings } from 'lucide-react';
+import { FileText, Award, Briefcase, GraduationCap, User, Settings, Palette, ClipboardList } from 'lucide-react';
 import { ReactNode } from 'react';
 
 // Custom section type
@@ -7,8 +7,8 @@ export interface CustomSection {
   id: string;
   title: string;
   content: string;
-    icon: "FileText" | "Award" | "Settings" | "Briefcase" | "GraduationCap" | "User"
-  }
+  icon: "FileText" | "Award" | "Settings" | "Briefcase" | "GraduationCap" | "User" | "Palette" | "ClipboardList";
+}
 
 // Map of icon names to components
 const iconMap = {
@@ -18,6 +18,8 @@ const iconMap = {
   Briefcase,
   GraduationCap,
   User,
+  Palette,
+  ClipboardList
 };
 
 // Define the ResumeData interface here, with 'id' as string
