@@ -6,13 +6,8 @@ import SectionTitle from '@/app/components/SectionTitle';
 // Dynamically import all template components using absolute paths
 // Each of these template files needs to be created in the specified path
 const templateComponents: { [key: string]: React.ElementType } = {
-  'modern-minimal': lazy(() => import('@/app/builder/ModernMinimalTemplate')),
-  'classic-pro': lazy(() => import('@/app/builder/ClassicProLayout')),
-  'creative-bold': lazy(() => import('@/app/builder/TwoColumnModern')),
-  'minimalist': lazy(() => import('@/app/builder/ProfessionalWithTips')),
-  'linkedin-modern': lazy(() => import('@/app/builder/DataAnalystFocus')),
-  'linkedin-professional': lazy(() => import('@/app/builder/ClassicProLayout')),
-  'linkedin-minimal': lazy(() => import('@/app/builder/BigDataEngineer')),
+  // New template mapping
+  'data-analyst-template': lazy(() => import('@/app/builder/DataAnalystTemplate')),
 };
 
 interface ResumePreviewProps {
@@ -22,7 +17,7 @@ interface ResumePreviewProps {
 }
 
 const ResumePreview = React.forwardRef<HTMLDivElement, ResumePreviewProps>(
-  ({ resumeData, zoomLevel = 1, activeTemplate = 'modern-minimal' }, ref) => {
+  ({ resumeData, zoomLevel = 1, activeTemplate = 'data-analyst-template' }, ref) => {
 
     const TemplateComponent = templateComponents[activeTemplate];
 
