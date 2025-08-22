@@ -2,9 +2,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Settings, CheckCircle, AlertTriangle, Sparkles, XCircle } from 'lucide-react';
+import { CheckCircle, AlertTriangle, Sparkles } from 'lucide-react';
 import AtsChecker from './AtsChecker';
-import { ResumeData, EnhancedResumeData } from '@/types/resume';
+import { EnhancedResumeData } from '@/types/resume';
 import { toast } from 'react-hot-toast';
 import { generateAiContent } from '@/lib/aiService';
 

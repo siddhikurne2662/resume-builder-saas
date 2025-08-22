@@ -3,8 +3,8 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Download, LayoutTemplate, User, Menu, X, ZoomIn, ZoomOut, UserCheck, Settings, Save } from 'lucide-react';
-import { signOut, type Auth, onAuthStateChanged } from 'firebase/auth';
+import { Download, LayoutTemplate, Menu, X, ZoomIn, ZoomOut, UserCheck, Settings, Save } from 'lucide-react';
+import { signOut, onAuthStateChanged } from 'firebase/auth';
 import { toast } from 'react-hot-toast';
 import { initializeFirebase, auth } from '@/lib/firebase';
 import { usePathname } from 'next/navigation';
@@ -63,17 +63,17 @@ export default function Header({
 
   const handleZoomIn = () => {
     setCurrentZoom(prev => Math.min(prev + 10, 150));
-    onZoomChange && onZoomChange(Math.min(currentZoom + 10, 150) / 100);
+    onZoomChange?.(Math.min(currentZoom + 10, 150) / 100);
   };
 
   const handleZoomOut = () => {
     setCurrentZoom(prev => Math.max(prev - 10, 50));
-    onZoomChange && onZoomChange(Math.max(currentZoom - 10, 50) / 100);
+    onZoomChange?.(Math.max(currentZoom - 10, 50) / 100);
   };
 
   const handleResetZoom = () => {
     setCurrentZoom(100);
-    onZoomChange && onZoomChange(1);
+    onZoomChange?.(1);
   };
 
   const handleLogout = async () => {
@@ -87,9 +87,13 @@ export default function Header({
       if (pathname === '/dashboard' || pathname === '/settings') {
         window.location.href = '/auth/login'; // Force a full page reload for protected routes
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Sign out error:", error);
-      toast.error(`Logout failed: ${error.message}`);
+      let errorMessage = "Logout failed.";
+      if (error instanceof Error) {
+        errorMessage = `Logout failed: ${error.message}`;
+      }
+      toast.error(errorMessage);
     }
   };
 

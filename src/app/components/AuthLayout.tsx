@@ -2,9 +2,9 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { onAuthStateChanged, getAuth } from 'firebase/auth';
+import { onAuthStateChanged } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
-import { initializeFirebase, db, auth } from '@/lib/firebase';
+import { initializeFirebase, auth } from '@/lib/firebase';
 import LoadingSkeleton from './LoadingSkeleton';
 
 interface AuthLayoutProps {

@@ -38,18 +38,23 @@ export default function AtsChecker({ resumeData }: AtsCheckerProps) {
         keywords: jobDescription.split(/\s+/).filter(word => word.length > 2 && word.match(/^[a-zA-Z0-9]+$/)),
       });
 
-      if (typeof result === 'object' && 'score' in result) {
-        setAtsScore(result.score);
-        setFeedback(result.feedback);
-        setMissingKeywords(result.missingKeywords);
+      if (typeof result === 'object' && result !== null && 'score' in result && 'feedback' in result) {
+        const atsResult = result as { score: number; feedback: string; missingKeywords: string[] };
+        setAtsScore(atsResult.score);
+        setFeedback(atsResult.feedback);
+        setMissingKeywords(atsResult.missingKeywords);
         toast.success('ATS analysis complete!');
       } else {
         toast.error('Failed to get ATS analysis from AI.');
       }
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error analyzing ATS:', error);
-      toast.error(`ATS analysis failed: ${error.message}`);
+      let errorMessage = "ATS analysis failed.";
+      if (error instanceof Error) {
+        errorMessage = `ATS analysis failed: ${error.message}`;
+      }
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }

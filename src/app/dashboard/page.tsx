@@ -75,7 +75,7 @@ export default function DashboardPage() {
           });
         });
         setUserResumes(fetchedResumes);
-      } catch (error) {
+      } catch (error: unknown) {
         console.error("Error fetching user resumes:", error);
         toast.error("Failed to load your resumes.");
       } finally {
@@ -98,9 +98,13 @@ export default function DashboardPage() {
         await deleteDoc(firebaseDoc(db, 'users', user.uid, 'resumes', resumeId));
         setUserResumes(prevResumes => prevResumes.filter(resume => resume.id !== resumeId));
         toast.success("Resume deleted successfully!");
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error("Error deleting resume:", error);
-        toast.error(`Error deleting resume: ${error.message}`);
+        let errorMessage = "Error deleting resume.";
+        if (error instanceof Error) {
+          errorMessage = `Error deleting resume: ${error.message}`;
+        }
+        toast.error(errorMessage);
       }
     }
   };
@@ -177,7 +181,7 @@ export default function DashboardPage() {
             ) : (
               <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {userResumes.length === 0 ? (
-                  <p className="text-dark-text-blue px-4">You don't have any resumes yet. Click "Create New Resume" to get started!</p>
+                  <p className="text-dark-text-blue px-4">You don&apos;t have any resumes yet. Click &quot;Create New Resume&quot; to get started!</p>
                 ) : (
                   userResumes.map(resume => (
                     <ResumeCard

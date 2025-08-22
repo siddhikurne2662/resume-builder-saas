@@ -4,9 +4,6 @@ import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import {
-  Download,
-  LayoutTemplate,
-  User,
   Briefcase,
   GraduationCap,
   Award,
@@ -17,16 +14,16 @@ import {
   Edit3,
   Check,
   X,
-  Settings,
+  User,
   Mail,
   Phone,
   Link as LinkIcon,
   MapPin,
   Sparkles,
-  Save,
   Palette,
   ClipboardList,
-  FileText
+  FileText,
+  Settings
 } from 'lucide-react';
 import ResumePreview, { PAPER_SIZES, PaperSize } from '../components/ResumePreview';
 import Header from '../components/Header';
@@ -38,8 +35,8 @@ import { initializeFirebase, db, auth } from '@/lib/firebase';
 import { initialResumeData } from '@/data/initialResumeData';
 import FloatingLabelInput from '../components/FloatingLabelInput';
 import { generateAiContent } from '@/lib/aiService';
-import AuthLayout from '../components/AuthLayout';
-import AtsChecker from '../components/AtsChecker';
+import AuthLayout from '../components/AuthLayout'; // Ensure this path is correct
+import AtsChecker from '../components/AtsChecker'; // Corrected path
 
 // Dynamically import html2pdf.js without ssr to avoid window errors
 const Html2Pdf = dynamic(() => import('html2pdf.js'), { ssr: false });
@@ -444,7 +441,7 @@ export default function ResumeBuilder() {
 
       document.body.removeChild(clonedElement);
       toast.success('PDF downloaded successfully!', { id: 'pdf-toast' });
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('PDF generation error:', error);
       toast.error('Failed to generate PDF. Please try again.', { id: 'pdf-toast' });
     } finally {
@@ -481,9 +478,13 @@ export default function ResumeBuilder() {
         toast.success('Resume saved successfully!', { id: 'save-toast' });
         router.push('/dashboard');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error saving resume:', error);
-      toast.error(`Failed to save resume: ${error.message}`, { id: 'save-toast' });
+      let errorMessage = "Failed to save resume.";
+      if (typeof error === 'object' && error !== null && 'message' in error && typeof (error as { message: unknown }).message === 'string') {
+        errorMessage = `Failed to save resume: ${(error as { message: string }).message}`;
+      }
+      toast.error(errorMessage, { id: 'save-toast' });
     }
   };
 
@@ -893,7 +894,7 @@ export default function ResumeBuilder() {
                     onChange={(e) => handleSkillsChange('Technical', e.target.value)}
                     isTextArea
                     rows={3}
-                    placeholder="Microsoft Office, Data Analysis, Programming Languages"
+                    placeholder="Microsoft Office, Data Analysis, Project Management, CRM Software, Database Management, Reporting Tools"
                   />
                   <FloatingLabelInput
                     id="skills-tools"
@@ -902,7 +903,7 @@ export default function ResumeBuilder() {
                     onChange={(e) => handleSkillsChange('Tools', e.target.value)}
                     isTextArea
                     rows={3}
-                    placeholder="Slack, Trello, CRM Software, Analytics Tools"
+                    placeholder="Slack, Trello, Salesforce, Google Analytics, Zoom, Adobe Creative Suite"
                   />
                   <FloatingLabelInput
                     id="skills-soft"
@@ -911,7 +912,7 @@ export default function ResumeBuilder() {
                     onChange={(e) => handleSkillsChange('Soft', e.target.value)}
                     isTextArea
                     rows={3}
-                    placeholder="Leadership, Communication, Spanish, French"
+                    placeholder="Leadership, Communication, Problem Solving, Team Management, Strategic Planning, Time Management"
                   />
                 </div>
               </ElegantCollapsibleSection>

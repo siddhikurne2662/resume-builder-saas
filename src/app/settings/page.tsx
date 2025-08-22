@@ -7,10 +7,9 @@ import Header from '../components/Header';
 import FloatingLabelInput from '../components/FloatingLabelInput';
 import { Toaster, toast } from 'react-hot-toast';
 import { UserCheck, Lock, Palette, Home, FileText, ListOrdered, Settings, X } from 'lucide-react';
-import { getAuth, updateProfile, updatePassword, onAuthStateChanged, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
+import { getAuth, updateProfile, updatePassword, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { useRouter } from 'next/navigation';
 import AuthLayout from '../components/AuthLayout';
 
 export default function SettingsPage() {
@@ -34,7 +33,7 @@ export default function SettingsPage() {
   });
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || !db) return;
 
     const fetchUserData = async () => {
       const userDocRef = doc(db, 'users', user.uid);
@@ -119,13 +118,17 @@ export default function SettingsPage() {
 
       toast.success("Profile updated successfully!");
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error updating profile:", error);
-      if (error.code === 'auth/wrong-password') {
-        toast.error("Incorrect current password.");
-      } else {
-        toast.error(`Error updating profile: ${error.message}`);
+      let errorMessage = "Error updating profile.";
+      if (typeof error === 'object' && error !== null && 'code' in error && typeof (error as { code: unknown }).code === 'string') {
+        if ((error as { code: string }).code === 'auth/wrong-password') {
+          errorMessage = "Incorrect current password.";
+        } else {
+            errorMessage = `Error updating profile: ${(error as unknown as { message: string }).message}`;
+        }
       }
+      toast.error(errorMessage);
     }
   };
 
@@ -140,9 +143,13 @@ export default function SettingsPage() {
         preferences: preferences,
       }, { merge: true });
       toast.success("Preferences saved!");
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error saving preferences:", error);
-      toast.error(`Error saving preferences: ${error.message}`);
+      let errorMessage = "Error saving preferences.";
+      if (error instanceof Error) {
+        errorMessage = `Error saving preferences: ${error.message}`;
+      }
+      toast.error(errorMessage);
     }
   };
 

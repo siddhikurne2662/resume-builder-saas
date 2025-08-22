@@ -5,7 +5,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import FloatingLabelInput from '../../components/FloatingLabelInput';
 import Header from '../../components/Header';
-import { User, Mail, Lock, CheckCircle, AlertCircle } from 'lucide-react';
+import { CheckCircle, AlertCircle } from 'lucide-react';
 
 import { Toaster, toast } from 'react-hot-toast';
 import { getAuth, createUserWithEmailAndPassword, updateProfile, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
@@ -120,15 +120,13 @@ export default function RegisterPage() {
     } catch (error: unknown) {
       console.error('Registration error:', error);
       let errorMessage = "Registration failed. Please try again.";
-      if (error instanceof Error) {
-        if ((error as any).code === 'auth/email-already-in-use') {
+      if (typeof error === 'object' && error !== null && 'code' in error && typeof (error as { code: unknown }).code === 'string') {
+        if ((error as { code: string }).code === 'auth/email-already-in-use') {
           errorMessage = "This email is already in use.";
-        } else if ((error as any).code === 'auth/invalid-email') {
+        } else if ((error as { code: string }).code === 'auth/invalid-email') {
           errorMessage = "The email address is not valid.";
-        } else if ((error as any).code === 'auth/weak-password') {
+        } else if ((error as { code: string }).code === 'auth/weak-password') {
           errorMessage = "Password is too weak. Please use a stronger password.";
-        } else {
-            errorMessage = error.message;
         }
       }
       toast.error(errorMessage);
@@ -166,15 +164,13 @@ export default function RegisterPage() {
     } catch (error: unknown) {
       console.error('Google registration error:', error);
       let errorMessage = "Google registration failed. Please try again.";
-      if (error instanceof Error) {
-        if ((error as any).code === 'auth/popup-closed-by-user') {
+      if (typeof error === 'object' && error !== null && 'code' in error && typeof (error as { code: unknown }).code === 'string') {
+        if ((error as { code: string }).code === 'auth/popup-closed-by-user') {
           errorMessage = "Google sign-in popup was closed.";
-        } else if ((error as any).code === 'auth/cancelled-popup-request') {
+        } else if ((error as { code: string }).code === 'auth/cancelled-popup-request') {
           errorMessage = "Another popup was opened, please try again.";
-        } else if ((error as any).code === 'auth/auth-domain-config-error' || (error as any).code === 'auth/configuration-not-found') {
+        } else if ((error as { code: string }).code === 'auth/auth-domain-config-error' || (error as { code: string }).code === 'auth/configuration-not-found') {
           errorMessage = "Firebase Auth domain not configured. Check Firebase Console settings.";
-        } else {
-            errorMessage = error.message;
         }
       }
       toast.error(errorMessage);
