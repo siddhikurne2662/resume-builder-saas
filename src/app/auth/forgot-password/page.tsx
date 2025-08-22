@@ -18,9 +18,13 @@ export default function ForgotPasswordPage() {
       toast.success('Password reset link sent to your email!');
       // Redirect to a confirmation page
       window.location.href = '/auth/password-reset-confirmation';
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Password reset error:', error);
-      toast.error(`Failed to send reset link: ${error.message}`);
+      let errorMessage = "Failed to send reset link.";
+      if (error instanceof Error) {
+        errorMessage = `Failed to send reset link: ${error.message}`;
+      }
+      toast.error(errorMessage);
     }
   };
 
@@ -61,7 +65,7 @@ export default function ForgotPasswordPage() {
         <div className="layout-content-container flex flex-col w-[512px] max-w-[512px] py-5 flex-1 bg-dark-bg-card p-8 rounded-xl shadow-lg border border-dark-border-medium mx-auto"> {/* Added mx-auto */}
           <h2 className="text-white tracking-light text-[28px] font-bold leading-tight px-4 text-center pb-3 pt-5">Forgot your password?</h2>
           <p className="text-white text-base font-normal leading-normal pb-3 pt-1 px-4 text-center">
-            Enter the email address associated with your account and we'll send you a link to reset your password.
+            Enter the email address associated with your account and we&apos;ll send you a link to reset your password.
           </p>
           <form onSubmit={handleResetPassword} className="flex flex-col gap-4 px-4 py-3">
             <FloatingLabelInput
@@ -75,7 +79,7 @@ export default function ForgotPasswordPage() {
             />
             <button
               type="submit"
-              className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-10 px-4 flex-1 bg-[#1473cc] text-white text-sm font-bold leading-normal tracking-[0.015em]"
+              className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-10 px-4 flex-1 bg-[#1473cc] text-white text-sm font-bold leading-normal tracking-[0.015em] hover:bg-[#1561ae] transition-colors font-inter"
             >
               <span className="truncate">Send Reset Link</span>
             </button>

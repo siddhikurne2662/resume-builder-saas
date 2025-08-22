@@ -5,7 +5,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import FloatingLabelInput from '../../components/FloatingLabelInput';
 import Header from '../../components/Header';
-import { Mail, Lock, AlertCircle, ArrowRight, CheckCircle } from 'lucide-react';
+import { AlertCircle, ArrowRight, CheckCircle } from 'lucide-react';
 import { Toaster, toast } from 'react-hot-toast';
 import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, setPersistence, browserSessionPersistence, browserLocalPersistence, onAuthStateChanged } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
@@ -79,13 +79,17 @@ export default function LoginPage() {
       await signInWithEmailAndPassword(auth, formData.email, formData.password);
       toast.success('Logged in successfully! Redirecting...');
       window.location.href = '/dashboard';
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Login error:', error);
       let errorMessage = "Login failed. Please check your credentials.";
-      if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
-        errorMessage = "Invalid email or password.";
-      } else if (error.code === 'auth/invalid-email') {
-        errorMessage = "The email address is not valid.";
+      if (error instanceof Error) {
+        if ((error as any).code === 'auth/user-not-found' || (error as any).code === 'auth/wrong-password') {
+          errorMessage = "Invalid email or password.";
+        } else if ((error as any).code === 'auth/invalid-email') {
+          errorMessage = "The email address is not valid.";
+        } else {
+            errorMessage = error.message;
+        }
       }
       toast.error(errorMessage);
     } finally {
@@ -123,15 +127,19 @@ export default function LoginPage() {
 
       toast.success('Logged in with Google successfully! Redirecting...');
       window.location.href = '/dashboard';
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Google login error:', error);
       let errorMessage = "Google login failed. Please try again.";
-      if (error.code === 'auth/popup-closed-by-user') {
-        errorMessage = "Google sign-in popup was closed.";
-      } else if (error.code === 'auth/cancelled-popup-request') {
-        errorMessage = "Another popup was opened, please try again.";
-      } else if (error.code === 'auth/auth-domain-config-error' || error.code === 'auth/configuration-not-found') {
-        errorMessage = "Firebase Auth domain not configured. Check Firebase Console settings.";
+      if (error instanceof Error) {
+        if ((error as any).code === 'auth/popup-closed-by-user') {
+          errorMessage = "Google sign-in popup was closed.";
+        } else if ((error as any).code === 'auth/cancelled-popup-request') {
+          errorMessage = "Another popup was opened, please try again.";
+        } else if ((error as any).code === 'auth/auth-domain-config-error' || (error as any).code === 'auth/configuration-not-found') {
+          errorMessage = "Firebase Auth domain not configured. Check Firebase Console settings.";
+        } else {
+            errorMessage = error.message;
+        }
       }
       toast.error(errorMessage);
     } finally {
@@ -285,7 +293,7 @@ export default function LoginPage() {
 
             {/* Footer */}
             <p className="text-center text-slate-400 mt-4 text-sm">
-              Don't have an account?{' '}
+              Don&apos;t have an account?{' '}
               <Link href="/auth/register" className="text-cyan-400 hover:text-cyan-300 font-medium transition-colors duration-300">
                 Create account
               </Link>

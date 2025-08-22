@@ -117,15 +117,19 @@ export default function RegisterPage() {
 
       toast.success('Registration successful! Redirecting...');
       window.location.href = '/dashboard';
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Registration error:', error);
       let errorMessage = "Registration failed. Please try again.";
-      if (error.code === 'auth/email-already-in-use') {
-        errorMessage = "This email is already in use.";
-      } else if (error.code === 'auth/invalid-email') {
-        errorMessage = "The email address is not valid.";
-      } else if (error.code === 'auth/weak-password') {
-        errorMessage = "Password is too weak. Please use a stronger password.";
+      if (error instanceof Error) {
+        if ((error as any).code === 'auth/email-already-in-use') {
+          errorMessage = "This email is already in use.";
+        } else if ((error as any).code === 'auth/invalid-email') {
+          errorMessage = "The email address is not valid.";
+        } else if ((error as any).code === 'auth/weak-password') {
+          errorMessage = "Password is too weak. Please use a stronger password.";
+        } else {
+            errorMessage = error.message;
+        }
       }
       toast.error(errorMessage);
     } finally {
@@ -159,15 +163,19 @@ export default function RegisterPage() {
 
       toast.success('Registered and logged in with Google successfully! Redirecting...');
       window.location.href = '/dashboard';
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Google registration error:', error);
       let errorMessage = "Google registration failed. Please try again.";
-      if (error.code === 'auth/popup-closed-by-user') {
-        errorMessage = "Google sign-in popup was closed.";
-      } else if (error.code === 'auth/cancelled-popup-request') {
-        errorMessage = "Another popup was opened, please try again.";
-      } else if (error.code === 'auth/auth-domain-config-error' || error.code === 'auth/configuration-not-found') {
-        errorMessage = "Firebase Auth domain not configured. Check Firebase Console settings.";
+      if (error instanceof Error) {
+        if ((error as any).code === 'auth/popup-closed-by-user') {
+          errorMessage = "Google sign-in popup was closed.";
+        } else if ((error as any).code === 'auth/cancelled-popup-request') {
+          errorMessage = "Another popup was opened, please try again.";
+        } else if ((error as any).code === 'auth/auth-domain-config-error' || (error as any).code === 'auth/configuration-not-found') {
+          errorMessage = "Firebase Auth domain not configured. Check Firebase Console settings.";
+        } else {
+            errorMessage = error.message;
+        }
       }
       toast.error(errorMessage);
     } finally {
