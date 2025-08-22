@@ -1,7 +1,6 @@
 // src/app/components/ResumePreview.tsx
 import React, { lazy, Suspense } from 'react';
 import { EnhancedResumeData } from '@/types/resume';
-import SectionTitle from '@/app/components/SectionTitle';
 
 // Dynamically import all template components using absolute paths
 const templateComponents: { [key: string]: React.ElementType } = {
@@ -85,7 +84,7 @@ const ResumePreview = React.forwardRef<HTMLDivElement, ResumePreviewProps>(
           }}
         >
           <div className="text-center p-8">
-            <p className="text-gray-600 mb-4">Template "{activeTemplate}" not found.</p>
+            <p className="text-gray-600 mb-4">Template &quot;{activeTemplate}&quot; not found.</p>
             <p className="text-sm text-gray-400">Please select a different template.</p>
           </div>
         </div>

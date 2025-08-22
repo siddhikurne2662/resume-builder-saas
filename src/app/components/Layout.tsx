@@ -1,5 +1,6 @@
 // src/app/components/Layout.tsx
 import React from 'react';
+import Link from 'next/link';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -12,9 +13,9 @@ export default function Layout({ children }: LayoutProps) {
       <header className="bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-primary-dark)] text-white p-4 shadow-md"> {/* Used variables here */}
         <div className="container mx-auto flex justify-between items-center">
           <h1 className="text-2xl font-outfit font-semibold"> {/* Applied Outfit font */}
-            <a href="/" className="hover:text-blue-200 transition-colors">
+            <Link href="/" className="hover:text-blue-200 transition-colors">
               ResumeFlow Pro 🚀
-            </a>
+            </Link>
           </h1>
           {/* Navigation / Auth Buttons - will add later */}
           <nav>
