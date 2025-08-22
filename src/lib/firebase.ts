@@ -1,7 +1,7 @@
 // src/lib/firebase.ts
-import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
+import { getAuth, Auth } from 'firebase/auth';
+import { getFirestore, Firestore } from 'firebase/firestore';
 
 // Export the Firebase configuration object.
 // Your provided environment variables should be added to your .env.local file
@@ -16,9 +16,9 @@ export const firebaseConfig = {
 };
 
 // We will initialize these services on the client side only.
-export let app: any;
-export let auth: any;
-export let db: any;
+export let app: FirebaseApp;
+export let auth: Auth;
+export let db: Firestore;
 
 // A function to initialize Firebase on the client.
 // This ensures that the app is only created in the browser.
