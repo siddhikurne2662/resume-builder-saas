@@ -3,12 +3,12 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import Header from '../components/Header';
 import { Home, FileText, ListOrdered, Settings, X } from 'lucide-react';
 import AuthLayout from '../components/AuthLayout';
 import { Toaster, toast } from 'react-hot-toast';
+import { useRouter } from 'next/navigation';
 
 export default function TemplatesPage() {
   const router = useRouter();
